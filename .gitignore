@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+._*
+
+# IDE
+.vscode/
+.idea/
+
+# License activation data (NEVER commit)
+.lk
+
+# Temporary
+*.tmp
+*.log
