@@ -1,32 +1,21 @@
 {
-  "version": "7.2.0",
-  "name": "AI Architect PRD Builder",
+  "version": "1.0.0",
+  "name": "AI Architect PRD Generator",
   "description": "Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), 8 context-aware PRD types, real-time LLM streaming, license-aware tiered architecture (trial/free/licensed), 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 7 utility tools, and Cowork plugin support",
   "license": {
     "tiers": ["trial", "free", "licensed"],
     "default_tier": "free",
     "validation": {
       "method": "cryptographic",
-      "validator_binary": "~/.aiprd/validate-license",
-      "build_command": "make build-validator",
       "verification": {
         "license_file": "Ed25519 signature + hardware fingerprint + expiry",
         "trial_file": "HMAC-SHA256 tamper detection + hardware fingerprint + expiry"
       }
     },
     "license_resolution": [
-      { "priority": 1, "source": "~/.aiprd/license.json", "condition": "Ed25519 signature verified, hardware match, not expired", "result": "licensed" },
-      { "priority": 2, "source": "~/.aiprd/trial.json", "condition": "HMAC valid, hardware match, not expired", "result": "trial" },
-      { "priority": 3, "source": "auto-create trial", "condition": "no existing trial", "result": "trial" },
-      { "priority": 4, "source": "default", "condition": "validator missing or all checks fail", "result": "free" }
+      { "priority": 1, "source": "~/.aiprd/.lk", "condition": "AES-256 decrypted, Ed25519 verified, not expired", "result": "licensed" },
+      { "priority": 2, "source": "default", "condition": "no valid activation", "result": "free" }
     ],
-    "trial": {
-      "duration_days": 14,
-      "storage_path": "~/.aiprd/trial.json",
-      "features": "licensed",
-      "purchase_url": "https://aiprd.dev/purchase",
-      "security": "HMAC-SHA256 keyed from hardware fingerprint"
-    },
     "free_tier": {
       "strategies": ["zero_shot", "chain_of_thought"],
       "prd_contexts": ["feature", "bug"],
@@ -470,10 +459,10 @@
     }
   },
   "plugin": {
-    "name": "ai-prd-builder",
-    "version": "7.2.0",
+    "name": "ai-prd-generator",
+    "version": "1.0.0",
     "engine_home": "~/.aiprd",
-    "install_command": "make install-engine",
+    "install_command": "scripts/setup.sh",
     "mcp_server": {
       "transport": "stdio",
       "command": "node ${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js",

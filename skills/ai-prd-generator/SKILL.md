@@ -1,22 +1,57 @@
 ---
 name: ai-prd-generator
-version: 7.2.0
-description: Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), context-aware depth (8 PRD types), license-aware tiered architecture, 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 7 utility tools, Cowork plugin support, and production-ready technical specifications
-dependencies: node>=18
-default_providers: claude_code_session, apple_intelligence
-optional_providers: openai, gemini, bedrock, openrouter, qwen, zhipu, moonshot, minimax
-license_tiers: trial, free, licensed
-prd_contexts: proposal, feature, bug, incident, poc, mvp, release, cicd
-vision_platforms: apple, android, java_enterprise, web
-engines: shared_utilities, rag, verification, meta_prompting, strategy, vision, orchestration, encryption
-mcp_tools: validate_license, get_license_features, get_config, read_skill_config, check_health, get_prd_context_info, list_available_strategies
-plugin: ai-prd-builder
-engine_home: ${CLAUDE_PLUGIN_ROOT} (Cowork) or ~/.aiprd (CLI)
+description: >
+  Generate production-ready PRDs, validate or activate AIPRD license keys, and analyze codebases for PRD context.
+  Use this skill when the user asks to: generate a PRD, validate a license key (AIPRD-), check license status, activate a license, or index a codebase.
+allowed-tools: Bash, Read, Write, Glob, Grep, WebFetch, WebSearch
 ---
 
-# AI PRD Generator - Enterprise Edition (v7.2.2)
+# AI Architect PRD Generator - Enterprise Edition (v1.0.0)
 
 I generate **production-ready** Product Requirements Documents with 8 independent engines: orchestration pipeline, encryption/PII protection, multi-LLM verification, and advanced reasoning strategies at every step.
+
+---
+
+## TOOL INVOCATION — DUAL SYSTEM
+
+This skill operates in two modes. Detection happens **ONCE** at the start of session.
+
+**Detection — check your available tools list:**
+- If a tool named `mcp__ai-prd-generator__validate_license` (or similar `mcp__ai-prd-generator__*`) exists → **MODE COWORK**
+- Otherwise → **MODE CLI TERMINAL**
+
+### Mode CLI Terminal
+
+In this mode there are NO MCP tools. I do everything directly using my standard tools: Bash, Read, Write, Glob, Grep, WebFetch.
+
+**License check — determining current tier:**
+1. Use the Read tool to read the file `~/.aiprd/license-key`.
+2. If the file exists and contains a key starting with `AIPRD-`, the tier is **licensed**. Do NOT call any external API — the key was already validated when the user activated it. Proceed immediately.
+3. If the file does not exist or is empty, ask the user using AskUserQuestion: "No license key found. Would you like to enter a license key or continue with free tier?" with two options:
+   - **Enter license key** → The user provides an AIPRD- key. Validate it via the License activation procedure below. If valid, tier is **licensed**. If invalid, tier is **free**.
+   - **Continue without** → tier is **free**. Proceed with free tier limitations.
+
+**License activation — when the user provides a key starting with `AIPRD-`:**
+1. Take the key the user provided (e.g. `AIPRD-562DC551-AC5E-4FB1-BA77-1FC84C5813E4`).
+2. Validate it by making an HTTP POST request to the Polar.sh API using Bash with `curl`. Send the key and organization_id `3c29257d-7ddb-4ef1-98d4-3d63c491d653` to `https://api.polar.sh/v1/customer-portal/license-keys/validate`. If the response does not contain status `granted`, also try the sandbox API at `https://sandbox-api.polar.sh/v1/customer-portal/license-keys/validate` with organization_id `33bddceb-c04b-40f7-a881-54402f1ddd4f`.
+3. If either endpoint returns status `granted`, the key is valid. Save the key to `~/.aiprd/license-key` using the Write tool so future sessions remember it. Display the LICENSED banner.
+4. If both endpoints reject the key, tell the user the key is invalid and display the FREE tier banner.
+
+**Config:** Read `skill-config.json` via the Read tool (search in the skill directory or `~/.aiprd/skill-config.json`).
+
+**Strategies/PRD contexts:** Use the tables in this document directly.
+
+**Codebase analysis:** `gh` CLI or Read/Glob/Grep on local files.
+
+**Environment:** Always `"cli"`.
+
+### Mode Cowork
+
+Call MCP tools directly: `validate_license`, `activate_license`, `get_config`, `check_health`, etc.
+**NEVER** via Bash. **NEVER** via curl. They are native tools like Read/Write/Bash.
+- Call them **directly as MCP tool calls**, exactly like you call `Read`, `Write`, `Bash`, or `Grep`.
+- **NEVER** write JSON-RPC messages. **NEVER** pipe to stdin. **NEVER** run `node mcp-server/index.js`.
+- If a tool name like `mcp__ai-prd-generator__validate_license` appears in your available tools, call it directly.
 
 ---
 
@@ -34,30 +69,16 @@ I generate **production-ready** Product Requirements Documents with 8 independen
 
 **On EVERY invocation, I MUST resolve the license tier before doing anything else.**
 
-**License Resolution — MCP Tool (Dual-Mode):**
+**Step 1 — Resolve license tier:**
+- **Cowork:** Call the `validate_license` MCP tool. Read the `tier` field from the response.
+- **CLI Terminal:**
+  1. Read `~/.aiprd/license-key` with the Read tool.
+  2. If the file exists and contains a key starting with `AIPRD-` → tier is `licensed`. No API call. Proceed.
+  3. If the file does not exist or is empty → ask the user with AskUserQuestion: "No license key found. Would you like to enter a license key or continue with free tier?"
+     - **User enters a key** → validate it against Polar.sh API using Bash with curl (see TOOL INVOCATION — License activation). If valid, save and set tier to `licensed`. If invalid, set tier to `free`.
+     - **User says continue without** → tier is `free`.
 
-I MUST call the `validate_license` MCP tool, which handles validation automatically in both environments:
-- **CLI mode:** Delegates to the external `~/.aiprd/validate-license` binary (Ed25519, hardware fingerprint)
-- **Cowork mode:** Uses in-plugin file-based validation (reads license.json from plugin directory)
-
-**Step 1:** Call the `validate_license` MCP tool. It returns:
-```json
-{
-  "tier": "licensed|trial|free",
-  "features": ["thinking_strategies", "advanced_rag", ...],
-  "signature_verified": true|false,
-  "hardware_verified": true|false,
-  "expires_at": "2026-12-31T00:00:00Z",
-  "days_remaining": 365,
-  "source": "license_file|trial|default_free",
-  "environment": "cli|cowork",
-  "errors": []
-}
-```
-
-**Step 2:** Set the session tier from the `"tier"` field in the response.
-
-**If the MCP tool is unavailable or returns an error → default to FREE tier.**
+**Step 2:** Display the license banner and proceed.
 
 **License Banner (MUST display after resolution):**
 
@@ -74,7 +95,7 @@ I MUST call the `validate_license` MCP tool, which handles validation automatica
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AI PRD Generator — TRIAL (X days remaining)
   Full access — all features unlocked
-  Purchase: https://aiprd.dev/purchase
+  Purchase: https://ai-architect.tools/purchase
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -83,7 +104,7 @@ I MUST call the `validate_license` MCP tool, which handles validation automatica
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   AI PRD Generator — FREE TIER
   2 strategies | 3 clarification rounds | feature/bug PRDs only
-  Upgrade: https://aiprd.dev/purchase
+  Upgrade: https://ai-architect.tools/purchase
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -92,7 +113,7 @@ I MUST call the `validate_license` MCP tool, which handles validation automatica
 | Feature | LICENSED / TRIAL | FREE |
 |---------|-----------------|------|
 | Strategies | All 15 | zero_shot, chain_of_thought |
-| Clarification rounds | Unlimited | 3 max |
+| Clarification rounds | Unlimited (proceed at 95%+, auto-generate at 100%) | 3 rounds then auto-proceed |
 | Verification | Full (6 algorithms) | Basic (single pass) |
 | PRD types | All 8 | feature, bug |
 | RAG | Full hybrid search | Basic keyword search |
@@ -197,20 +218,33 @@ If "Focused Epic PRD" → AskUserQuestion to select epic → Generate implementa
 
 ---
 
-### Rule 1: Infinite Clarification (MANDATORY)
+### Rule 1: Clarification Loop (MANDATORY)
 
-- **I ALWAYS ask clarification questions** before generating any PRD content
-- **Infinite rounds**: I continue asking questions until YOU explicitly say "proceed", "generate", or "start"
-- **User controls everything**: Even if my confidence is 95%, I WAIT for your explicit command
-- **NEVER automatic**: I NEVER auto-proceed based on confidence scores alone
-- **Interactive questions**: I use AskUserQuestion tool with multi-choice options
+**I ALWAYS ask clarification questions before generating any PRD content.**
 
-**FREE tier cap:** In FREE mode, clarification is limited to **3 rounds**. After round 3, I auto-proceed with a notice:
+**LICENSED / TRIAL tier — unlimited rounds, confidence-driven:**
+
+After each clarification round, I show the current confidence score and follow these rules strictly:
+
+- **Below 92%**: I MUST continue clarifying. I do NOT offer to proceed. I show the confidence score, identify gaps pulling it down, and ask more questions. I mention: "Proceed becomes available at 92% confidence."
+- **92% to 94%**: I continue clarifying to reach the 95% target. I show the confidence score. I do NOT offer to proceed yet. I mention: "Approaching 95% — proceeding will be available at 95%."
+- **95% to 99%**: I synthesize all decisions into a summary, show the confidence score, and ask the user using AskUserQuestion with exactly two options: "Clarify more" or "Proceed to PRD generation". The user decides. I NEVER auto-proceed in this range.
+- **100%**: All gaps are closed. I auto-start PRD generation (Phase 3) without asking.
+
+There is NO round limit. I show "Clarification Round X" with no cap number.
+
+**FREE tier — 3 rounds, then auto-proceed:**
+
+1. I ask clarification questions for up to 3 rounds.
+2. I show "Clarification Round X/3" to indicate the cap.
+3. After each round I show the confidence score for information only.
+4. After round 3, I auto-proceed regardless of the confidence score:
 ```
 ⚠️ Free tier: 3 clarification rounds reached — proceeding with gathered context.
-For unlimited clarification rounds, upgrade: https://aiprd.dev/purchase
+For unlimited clarification rounds, upgrade: https://ai-architect.tools/purchase
 ```
-LICENSED and TRIAL tiers have no round limit.
+
+**All tiers:** I use AskUserQuestion with structured multi-choice options (never open-ended text). Users can always select "Other" for custom input.
 
 ### Rule 2: Incremental Section Generation
 
@@ -244,7 +278,7 @@ LICENSED and TRIAL tiers have no round limit.
 ```
 ⚠️ Free tier: "{requested_type}" PRDs require a license.
 Available free types: feature, bug
-Upgrade for all 8 PRD types: https://aiprd.dev/purchase
+Upgrade for all 8 PRD types: https://ai-architect.tools/purchase
 ```
 Then I offer `feature` as the fallback via AskUserQuestion. LICENSED and TRIAL tiers have access to all 8 types.
 
@@ -365,43 +399,16 @@ AskUserQuestion({
 
 ## LICENSE TIERS
 
-**The system supports three license tiers: Trial (14-day full access), Free (degraded), and Licensed (full).**
+**The system supports two license tiers: Free (default) and Licensed (full). Trial keys can be requested at admin@ai-architect.tools for evaluation.**
 
-### Trial Tier (14-Day Full Access)
+### Free Tier (Default)
 
-On first invocation, a trial is auto-created with a 14-day window. In CLI mode, this is stored at `~/.aiprd/trial.json`. In Cowork mode, trial state does not persist between sessions. During trial, all features are unlocked — identical to Licensed tier.
-
-| Feature | Availability | Details |
-|---------|-------------|---------|
-| **Thinking Strategies** | All 15 | Full access with research-based prioritization |
-| **Clarification Rounds** | Unlimited | User-driven stopping only |
-| **Verification Engine** | Full | Multi-judge consensus, CoVe, Atomic Decomposition, Debate |
-| **PRD Types** | All 8 | proposal, feature, bug, incident, poc, mvp, release, cicd |
-| **RAG Engine** | Full | Hybrid search, contextual BM25 |
-| **Business KPIs** | Full | All 8 metric systems |
-| **Codebase Analysis** | Full | With RAG-enhanced context |
-
-**Trial state file (`~/.aiprd/trial.json`):**
-```json
-{
-  "version": 1,
-  "trial_started_at": "2026-02-10T14:30:00Z",
-  "trial_duration_days": 14,
-  "trial_expires_at": "2026-02-24T14:30:00Z",
-  "invocation_count": 1
-}
-```
-
-**Trial expiry:** When `trial_expires_at` is in the past, tier degrades to FREE automatically.
-
-### Free Tier (Post-Trial Degraded)
-
-Active when trial has expired and no license is present.
+Active when no valid license activation is present.
 
 | Feature | Availability | Limitation |
 |---------|-------------|------------|
 | **Thinking Strategies** | 2 of 15 | Only `zero_shot` and `chain_of_thought` |
-| **Clarification Rounds** | 3 max | Auto-proceeds after round 3 |
+| **Clarification Rounds** | 3 max | Auto-proceeds after round 3 regardless of confidence |
 | **Verification Engine** | Basic only | Single pass, no multi-judge, no debate |
 | **PRD Types** | 2 of 8 | Only `feature` and `bug` |
 | **RAG Engine** | Basic | Keyword search only |
@@ -415,7 +422,7 @@ Active with cryptographically verified license file.
 | Feature | Availability | Details |
 |---------|-------------|---------|
 | **Thinking Strategies** | All 15 | Full access with research-based prioritization |
-| **Clarification Rounds** | Unlimited | User-driven stopping only |
+| **Clarification Rounds** | Unlimited | Proceed option at 95%+, auto-generate at 100% |
 | **Verification Engine** | Full | Multi-judge consensus, CoVe, Atomic Decomposition, Debate |
 | **PRD Types** | All 8 | All context types available |
 | **RAG Engine** | Full | Hybrid search, contextual BM25 |
@@ -424,42 +431,28 @@ Active with cryptographically verified license file.
 
 ### Configuration
 
-**CLI mode (persistent environment):**
-```bash
-# Trial: auto-created on first invocation at ~/.aiprd/trial.json
-# Licensed: place a signed license at ~/.aiprd/license.json
-# Build validator: make build-validator
+```
+# Activate: See TOOL INVOCATION section for mode-specific activation
+# Validate: See TOOL INVOCATION section for mode-specific validation
+# Free tier is the default when no valid license is found
 ```
 
-**Cowork mode (ephemeral VM):**
-```
-# Licensed: place a license.json in the plugin root directory
-# Trial: does not persist between sessions (VM resets)
-# The bundled MCP server handles validation automatically
-```
+### License Resolution
 
-### License Resolution (Dual-Mode)
+**Cowork:** The MCP server handles resolution automatically via the `validate_license` tool, using encrypted local persistence.
 
-The MCP server's `validate_license` tool handles resolution automatically:
-
-**CLI mode** (external binary at `~/.aiprd/validate-license`):
-1. `~/.aiprd/license.json` — Ed25519 signature verified + hardware fingerprint + not expired → **LICENSED**
-2. `~/.aiprd/trial.json` — HMAC tamper detection + hardware fingerprint + not expired → **TRIAL**
-3. No valid trial → auto-create 14-day trial → **TRIAL**
-4. All checks fail → **FREE**
-
-**Cowork mode** (encrypted in-plugin validation):
-1. Encrypted activation blob in plugin cache directory (`.lk`) — AES-256 decrypted, Ed25519 verified, not expired → **LICENSED**
-2. No activation found → **FREE** (user calls `activate_license` once; persists in plugin cache directory which is saved locally on the user's machine)
-3. Note: plugin updates/reinstalls may clear the cache — user may need to re-activate after plugin updates
+**CLI Terminal:** I read the saved license key from `~/.aiprd/license-key`. If the file exists and contains an AIPRD- key → **LICENSED**. If no saved key → **FREE**. The Polar.sh API is only called once during activation, never during routine license checks.
 
 ---
 
 ## WORKFLOW
 
-### Phase 0: Cowork Environment Awareness (Cowork mode ONLY)
+### Phase 0: Environment Awareness
 
-**When `check_health` returns `environment: "cowork"`, I adapt my behavior to the Cowork VM constraints.**
+**Cowork:** When `check_health` returns `environment: "cowork"`, I adapt my behavior to the Cowork VM constraints.
+**Terminal:** Always CLI mode — no VM constraints. Skip directly to Phase 1.
+
+**The rest of Phase 0 applies to Cowork mode ONLY.**
 
 **What is Cowork?** Claude Cowork runs inside an **isolated Ubuntu 22.04 ARM64 VM** on the user's local machine via Apple's Virtualization Framework. Understanding the VM's capabilities and limitations is critical:
 
@@ -469,7 +462,7 @@ The MCP server's `validate_license` tool handles resolution automatically:
 - `pip install` works (pypi.org is allowlisted)
 - `npm install` works (registry.npmjs.org is allowlisted)
 - File access to user's shared folders via VirtioFS mounts
-- The plugin MCP server (index.js) running via Node.js
+- The plugin's MCP tools (auto-loaded from the plugin's .mcp.json)
 
 **What is NOT available in the Cowork VM:**
 - `gh` CLI — NOT pre-installed, CANNOT be installed (github.com blocked by network)
@@ -540,10 +533,10 @@ When user provides a codebase reference (GitHub URL, local path, or shared direc
 
 **Environment Detection (MANDATORY FIRST STEP):**
 
-Before fetching any codebase context, I MUST call the `check_health` MCP tool to determine the environment. The `environment` field in the response tells me which method to use:
+I use the mode detected at session start (see TOOL INVOCATION — DUAL SYSTEM):
 
-- `environment: "cli"` → Use Method 1 or Method 2 (GitHub access available)
-- `environment: "cowork"` → Use Method 3 ONLY (GitHub is BLOCKED — local files only)
+- **Terminal** → Use Method 1 or Method 2 (full local + GitHub access)
+- **Cowork** → Call `check_health` MCP tool. If `environment: "cowork"` → Use Method 3 ONLY (GitHub is BLOCKED — local files only). If `environment: "cli"` → Use Method 1 or Method 2.
 
 **Method 1 — `gh` CLI (CLI mode only):**
 
@@ -555,14 +548,14 @@ When running locally with `gh` CLI available:
 4. Use `gh api repos/{owner}/{repo}/contents/{path}` to fetch specific file contents
 5. Extract architecture patterns, existing implementations, dependencies, **and baseline metrics**
 
-**Method 2 — MCP GitHub Tools (CLI mode, when gh CLI unavailable):**
+**Method 2 — Plugin GitHub Tools (Cowork CLI mode, or Terminal when gh unavailable):**
 
-When `gh` CLI is not installed but running in CLI mode (has network access):
+When `gh` CLI is not installed but running with network access (Cowork CLI mode or Terminal fallback):
 
 1. Parse the GitHub URL to extract owner/repo
-2. **For private repos**: Call `github_login` MCP tool FIRST → user authenticates via device flow → call `github_poll` to complete.
-3. Call `fetch_github_tree` MCP tool with the URL to get file structure
-4. Call `fetch_github_file` or `fetch_github_files_batch` MCP tool to fetch file contents
+2. **For private repos**: Call the `github_login` tool FIRST → user authenticates via device flow → call `github_poll` to complete.
+3. Call the `fetch_github_tree` tool with the URL to get file structure
+4. Call the `fetch_github_file` or `fetch_github_files_batch` tool to fetch file contents
 5. Extract architecture patterns, existing implementations, dependencies, **and baseline metrics**
 
 **Method 3 — Cowork Mode (MANDATORY when environment is "cowork"):**
@@ -760,15 +753,27 @@ If user doesn't know current metrics AND I can't find them in codebase:
 - Users can always select "Other" for custom input
 - Questions include concrete examples referencing actual features from the description
 
-**Loop Behavior:**
+**Loop Behavior (LICENSED / TRIAL):**
 
-I continue asking clarification questions until the user explicitly says "proceed", "generate", or "start". Even at high confidence, I confirm readiness. I NEVER auto-proceed based on confidence scores alone.
+1. I ask targeted clarification questions using AskUserQuestion (multi-choice options).
+2. After the user answers, I compute confidence and show it.
+3. Confidence below 92%: I continue clarifying. I show gaps pulling confidence down. I mention "Proceed becomes available at 92%." I do NOT offer to proceed.
+4. Confidence 92%-94%: I continue clarifying toward 95%. I mention "Approaching 95% — proceeding will be available at 95%." I do NOT offer to proceed.
+5. Confidence 95%-99%: I synthesize all decisions into a summary, show the confidence score, and ask using AskUserQuestion: "Clarify more" or "Proceed to PRD generation". The user decides.
+   - **Clarify more** → I identify remaining zones and ask focused questions. After answers, go back to step 2.
+   - **Proceed** → I move to Phase 3.
+6. Confidence 100%: All gaps closed. I auto-start Phase 3.
+7. Display format: "Clarification Round X" (no cap number shown).
+
+**Loop Behavior (FREE):**
+
+3 rounds max. After each round I show confidence for information. After round 3, auto-proceed regardless of score. Display format: "Clarification Round X/3".
 
 ---
 
 ### Phase 3: PRD Generation with Section-by-Section Refinement
 
-**Only entered when user explicitly commands it.**
+**ONLY entered when: (a) the user explicitly chose "Proceed" at 95%-99% confidence, or (b) confidence reached 100% and auto-started. If neither condition is met, I STOP and go back to Phase 2.**
 
 I generate sections one by one, showing progress. After each section, the user can provide feedback and I will refine before moving to the next section.
 
@@ -896,6 +901,8 @@ All 4 files created successfully.
 **The `PRD-{ProjectName}-verification.md` file MUST contain VERIFIABLE metrics with baselines.**
 
 **Rule: Every metric MUST include baseline, result, delta, and measurement method.**
+
+**Rule: `{date}` MUST be today's actual date in YYYY-MM-DD format. NEVER hallucinate a past or future year. If unsure of today's date, use the system-provided current date. Double-check the year is correct before writing.**
 
 ```markdown
 # Verification Report: {Project Name}
@@ -1233,10 +1240,14 @@ RISK: R-001 - Third-party AI API rate limits
 
 ## Issues Detected & Resolved
 
+**Rule: This section MUST also check for dangling cross-references. Scan the PRD for every mention of FR-XXX, NFR-XXX, AC-XXX, BG-XXX, STORY-XXX, and verify each target exists. Report any that don't as "Dangling Reference" issues and FIX them before finalizing the PRD.**
+
 | Issue Type | Count | Example | Resolution |
 |------------|-------|---------|------------|
 | Orphan Requirements | 2 | FR-028 had no parent | Linked to FR-027 |
+| Dangling References | 0 | - | - |
 | Circular Dependencies | 0 | - | - |
+| Self-Referencing Deps | 0 | - | - |
 | Contradictions | 0 | - | - |
 | Ambiguities | 1 | "vector dimension unspecified" | Clarified as 384 |
 
@@ -1261,6 +1272,14 @@ RISK: R-001 - Third-party AI API rate limits
 ---
 
 ## Limitations & Human Review Required
+
+**Rule: The Overall Score MUST honestly reflect issues found. Apply penalties:**
+- Each ⚠️ CONDITIONAL verdict: -2% per claim
+- Each ❌ INVALID verdict: -5% per claim
+- Each orphan/dangling reference found: -1%
+- Each contradiction found: -3%
+- Each self-referencing dependency: -2%
+- **A report that finds 9+ issues CANNOT score above 90%.** If your score math doesn't reflect the issues you found, recalculate.
 
 **⚠️ This verification score (XX%) indicates internal consistency, NOT domain correctness.**
 
@@ -1347,6 +1366,10 @@ All assumptions made during PRD generation that require stakeholder validation.
 ### JIRA FILE FORMAT
 
 **The `PRD-{ProjectName}-jira.md` file MUST contain:**
+
+**Rule: Story point distribution across sprints/epics MUST reflect actual complexity differences. NEVER distribute SP evenly (e.g., 13/13/13/13) — real projects have uneven distributions. Foundation sprints typically carry more SP than polish sprints. If you find yourself with identical SP per sprint, re-examine each story's actual complexity.**
+
+**Rule: Self-referencing dependencies are FORBIDDEN. A story MUST NOT list itself as a dependency (e.g., STORY-005 depending on STORY-005). Validate all dependency references exist and are not circular.**
 
 ```markdown
 # JIRA Tickets: {Project Name}
@@ -2193,7 +2216,7 @@ All advanced strategies gracefully degrade to `chain_of_thought` for free users.
 When degradation occurs, I display:
 ```
 ℹ️ Strategy "{requested}" requires a license — using chain_of_thought instead.
-Upgrade for all 15 strategies: https://aiprd.dev/purchase
+Upgrade for all 15 strategies: https://ai-architect.tools/purchase
 ```
 
 ---
@@ -2308,6 +2331,7 @@ Before delivering PRD, I verify:
 - [ ] Numbered FR-001+
 - [ ] Priority [P0/P1/P2]
 - [ ] NFRs with metrics
+- [ ] **CROSS-REFERENCE INTEGRITY:** Every FR-XXX, NFR-XXX, AC-XXX, BG-XXX reference in the entire PRD points to an item that actually exists. No dangling references. If a section says "see FR-011", then FR-011 MUST be defined. Run a mental pass over all cross-references before finalizing.
 
 **Acceptance Criteria (with KPIs):**
 - [ ] Every AC uses GIVEN-WHEN-THEN format
@@ -2391,22 +2415,7 @@ echo $ANTHROPIC_API_KEY
 
 ## VERSION HISTORY
 
-- **v7.2.2**: Cowork environment rewrite — accurate Ubuntu 22.04 ARM64 VM model, no GitHub/Docker/gh assumptions, file-based codebase analysis via shared local directories, network allowlist awareness, correct pre-installed tool inventory
-- **v7.2.1**: Dual-mode MCP server — bundled Node.js server runs in both CLI and Cowork, auto-detects environment, no external install needed for Cowork
-- **v7.2.0**: MCP server (7 utility tools) + Cowork plugin support, engine installed separately at ~/.aiprd/, lightweight plugin shell for marketplace distribution (<50MB), local marketplace for dev testing
-- **v7.1.0**: 14-day trial + 3-tier license enforcement (Trial/Free/Licensed), trial.json auto-creation, free-tier PRD type restrictions, clarification round caps, strategy degradation notices
-- **v7.0.0**: Phase 7 complete - Vision Engine + Business KPIs (8 metric systems) with documented baselines
-- **v6.0.0**: Business KPIs research, Video-RAG research, DeepSeek-OCR research
-- **v5.0.0**: VisionEngine (Apple Foundation Models, 180+ components, multi-provider)
-- **v4.5.0**: Complete 8-type PRD context system (added CI/CD) - final template set for BAs and PMs
-- **v4.4.0**: Extended context-aware PRD generation to 7 types (added poc/mvp/release) with context-specific sections, clarification questions, RAG focus, and strategy selection
-- **v4.3.0**: Context-aware PRD generation (proposal/feature/bug/incident) with adaptive depth, context-specific sections, and RAG depth optimization
-- **v4.2.0**: Real-time LLM streaming across all 15 thinking strategies with automatic fallback
-- **v4.1.0**: License-aware tiered architecture + RAG integration for all 15 strategies + Research-based prioritization (MIT/Stanford/Harvard/Anthropic/OpenAI/DeepSeek)
-- **v4.0.0**: Meta-Prompting Engine with 15 strategies + 6 cross-enhancement innovations + 30+ KPIs
-- **v3.0.0**: Enterprise output + 6 verification algorithms
-- **v2.0.0**: Contextual BM25 RAG (+49% precision)
-- **v1.0.0**: Foundation
+- **v1.0.0**: Licensed distribution — Ed25519 license validation, plugin architecture (CLI + Cowork), 8 PRD types, 15 thinking strategies, multi-judge verification, 4-file export
 
 ---
 
@@ -2427,4 +2436,4 @@ echo $ANTHROPIC_API_KEY
 - Free tier (post-trial): Basic strategies (zero_shot, chain_of_thought), 3 clarification rounds max, basic verification, feature/bug PRDs only
 - Licensed tier: All 15 RAG-enhanced strategies with research-based prioritization, unlimited clarification, full verification engine, context-aware depth adaptation
 
-**Purchase:** https://aiprd.dev/purchase
+**Purchase:** https://ai-architect.tools/purchase

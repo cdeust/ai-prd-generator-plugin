@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "author": {
     "name": "Clement Deust",
-    "email": "support@aiprd.dev",
-    "url": "https://aiprd.dev"
+    "email": "admin@ai-architect.tools",
+    "url": "https://ai-architect.tools"
   },
-  "homepage": "https://aiprd.dev",
+  "homepage": "https://ai-architect.tools",
   "repository": "https://github.com/cdeust/ai-prd-generator-plugin",
   "license": "Commercial",
   "keywords": [
