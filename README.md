@@ -1,156 +1,140 @@
 # AI PRD Generator
 
-Enterprise-grade Product Requirements Document generator for Claude Code and Cowork.
+Generate implementation-ready Product Requirements Documents with SQL DDL, API specs, domain models, JIRA tickets, test cases, and claim-by-claim verification reports.
 
-Produces implementation-ready PRDs with SQL DDL, API specs, domain models, JIRA tickets, test cases, and verification reports. Supports 8 PRD types, 15 thinking strategies with research-based prioritization, multi-round interactive clarification, codebase context analysis, and automated 4-file export.
+## What It Does
 
-## Installation
+This plugin generates enterprise-grade PRDs through an interactive multi-round clarification workflow. It analyzes your project description (and optionally your codebase), asks targeted clarification questions until confidence reaches 95%+, then produces a complete 4-file deliverable:
 
-### From Plugin Directory
+- **PRD document** with full technical specifications, domain models, and API routes
+- **JIRA tickets** with Fibonacci story points, acceptance criteria, and sprint phasing
+- **Test cases** covering unit, integration, and e2e with traceability matrix
+- **Verification report** with claim-by-claim audit trail and confidence scores
 
-Search for **AI PRD Generator** in the Claude Code plugin directory.
+Supports 8 PRD types, 15 research-based thinking strategies, multi-judge verification, and codebase context analysis.
 
-### Manual Installation
+## Usage
 
-```bash
-claude plugin install ai-prd-generator
+### Generate a PRD
+
+```
+/ai-prd-generator:generate-prd
 ```
 
-### Development Mode
+Or describe what you need directly:
 
-```bash
-git clone https://github.com/cdeust/ai-prd-generator-plugin.git
-claude --plugin-dir ./ai-prd-generator-plugin
+```
+generate a PRD for a user authentication system with OAuth2
+```
+
+The plugin will detect your project type, ask clarification questions, and generate all four output files when ready.
+
+### With codebase context
+
+```
+/ai-prd-generator:index-codebase /path/to/your/project
+```
+
+Then generate a PRD. The plugin uses your codebase architecture, patterns, and existing code to produce more accurate specs.
+
+### License activation
+
+```
+/ai-prd-generator:validate-license AIPRD-your-key-here
+```
+
+Check current license status:
+
+```
+/ai-prd-generator:validate-license
 ```
 
 ## Features
 
-### 8 PRD Types
+**8 PRD Types** — Feature, Bug, Incident, Proposal, MVP, POC, Release, CI/CD. Each type has a tailored clarification depth, section count, and focus area.
 
-| Type | Focus | Sections |
-|------|-------|----------|
-| **Feature** | Full technical implementation | 11 sections with SQL DDL, API specs |
-| **Bug** | Root cause analysis | 6 sections with regression tests |
-| **Incident** | Deep forensic investigation | 8 sections with timeline + prevention |
-| **Proposal** | Business case & ROI | 7 sections, stakeholder-facing |
-| **MVP** | Core value, fastest to market | 8 sections with explicit cut list |
-| **POC** | Feasibility validation | 5 sections with risk assessment |
-| **Release** | Production readiness | 10 sections with rollback plan |
-| **CI/CD** | Pipeline automation | 9 sections with deployment strategy |
+**15 Thinking Strategies** — Research-based selection from MIT, Stanford, Harvard, Anthropic, OpenAI, and DeepSeek papers (2024-2026). Strategies are tiered by effectiveness: Extended Thinking (TRM), Verified Reasoning, Self-Consistency, Tree of Thoughts, Graph of Thoughts, ReAct, Reflexion, and more.
 
-### 4-File Export (Automated)
+**Multi-Judge Verification** — 6 algorithms including adaptive consensus with early stopping, zero-LLM graph verification, multi-agent debate, and atomic claim decomposition. Every claim in the PRD is individually verified.
 
-Every PRD generation produces four files:
+**Interactive Clarification** — Confidence-driven loop with structured multi-choice questions. Licensed users get unlimited rounds with threshold-based progression (92% minimum, 95% preferred, 100% auto-generate). Free tier gets 3 rounds.
 
-| File | Audience | Contents |
-|------|----------|----------|
-| `PRD-{Name}.md` | Product/Stakeholders | Full PRD with specs, models, API routes |
-| `PRD-{Name}-jira.md` | Project Management | JIRA-importable tickets with story points |
-| `PRD-{Name}-tests.md` | QA Team | Unit, integration, e2e tests + traceability |
-| `PRD-{Name}-verification.md` | Audit/Compliance | Claim-by-claim verification audit trail |
+**Codebase Context Analysis** — Extracts architecture patterns (Repository, Service, Factory, MVVM, Clean Architecture), domain entities, dependencies, and baseline metrics from your codebase. References specific files and line numbers in the generated PRD.
 
-### 15 Thinking Strategies
+**4-File Export** — Every generation produces `PRD-{Name}.md`, `PRD-{Name}-jira.md`, `PRD-{Name}-tests.md`, and `PRD-{Name}-verification.md`.
 
-Research-based strategy selection from MIT, Stanford, Harvard, Anthropic, OpenAI, and DeepSeek papers (2024-2026):
+## How It Works
 
-- **Tier 1**: Extended Thinking (TRM), Verified Reasoning, Self-Consistency
-- **Tier 2**: Tree of Thoughts, Graph of Thoughts, ReAct, Reflexion
-- **Tier 3**: Few-Shot, Meta-Prompting, Plan and Solve, Problem Analysis
-- **Tier 4 (Free)**: Zero-Shot, Chain of Thought
+1. **License check** — Reads saved license key from `~/.aiprd/license-key`. If none found, asks whether to enter a key or continue with free tier.
+2. **Input analysis** — Detects PRD type, scope, and complexity from your description. If a codebase was indexed, incorporates architecture context.
+3. **Clarification loop** — Asks multi-choice questions in rounds. Confidence score increases each round. Continues until the threshold is reached or the user says "proceed".
+4. **Generation** — Produces all PRD sections using the selected thinking strategy, with section-by-section verification.
+5. **Export** — Writes four files to the current directory.
 
-### Multi-Judge Verification Engine
-
-6 verification algorithms with adaptive consensus:
-
-1. **KS Adaptive Consensus** — Early stopping when judges agree (saves 30-50% LLM calls)
-2. **Zero-LLM Graph Verification** — Free structural analysis (cycles, orphans, conflicts)
-3. **Multi-Agent Debate** — Converge on disputed claims
-4. **Complexity-Aware Strategy** — Right-size verification per claim
-5. **Atomic Claim Decomposition** — Split vague claims into verifiable atoms
-6. **Unified Verification Pipeline** — Orchestrate all algorithms per section
-
-### Codebase Context Analysis
-
-When provided a local codebase directory, the generator:
-
-- Extracts architecture patterns, domain entities, dependencies
-- Finds baseline metrics from test assertions, monitoring code, SLA configs
-- Uses real codebase data for goal-setting (not guesses)
-- References specific files and line numbers in the PRD
-
-### Interactive Clarification
-
-- Infinite clarification rounds — user controls when to proceed
-- Context-aware questions informed by codebase and mockup analysis
-- Scope assessment with epic detection for large requests
-- Structured multi-choice questions (never open-ended)
-
-## Slash Commands
+## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/ai-prd-generator:generate-prd` | Generate a production-ready PRD |
-| `/ai-prd-generator:validate-license` | Check license tier and activate keys |
-| `/ai-prd-generator:index-codebase` | Analyze a codebase for RAG-enhanced generation |
-
-## MCP Server Tools
-
-The plugin includes a zero-dependency Node.js MCP server with tools for:
-
-- License validation and activation (Ed25519 cryptographic verification)
-- Configuration and skill config inspection
-- Health checks with environment detection
-- PRD context and strategy information
+| `/ai-prd-generator:generate-prd` | Generate a PRD through the full interactive workflow |
+| `/ai-prd-generator:validate-license AIPRD-key` | Activate a license key |
+| `/ai-prd-generator:validate-license` | Check current license tier |
+| `/ai-prd-generator:index-codebase /path` | Index a codebase for context-aware generation |
 
 ## License Tiers
 
-### Free Tier
+**Free** — Feature and Bug PRD types, 2 thinking strategies (Zero-Shot, Chain of Thought), 3 clarification rounds, basic verification.
 
-- 2 thinking strategies (Zero-Shot, Chain of Thought)
-- 3 clarification rounds max
-- Basic verification (single pass)
-- Feature and Bug PRD types
+**Licensed** — All 8 PRD types, all 15 thinking strategies, unlimited clarification rounds, full 6-algorithm verification engine, business KPIs, priority support. Purchase at [ai-architect.tools](https://ai-architect.tools).
 
-### Licensed Tier
+The plugin works fully on free tier without a license key. Licensed tier unlocks all capabilities.
 
-- All 15 thinking strategies with research-based prioritization
-- Unlimited clarification rounds
-- Full 6-algorithm verification engine
-- All 8 PRD types
-- Priority support
+## Installation
 
-**Pricing**: $79/month or $499 lifetime license at [aiprd.dev](https://aiprd.dev)
+### Claude Code (CLI Terminal)
 
-## Use Cases
+Requires Node.js 18+ and [Claude Code](https://docs.anthropic.com/en/docs/claude-code).
 
-### 1. Feature PRD with Codebase Analysis
+```bash
+git clone https://github.com/cdeust/ai-prd-generator-plugin.git
+cd ai-prd-generator-plugin
+./scripts/setup.sh
+```
 
-Share a project directory and describe a new feature. The generator analyzes existing architecture, extracts baseline metrics, asks targeted clarification questions referencing actual code patterns, then produces a full 11-section PRD with SQL DDL, domain models, API specs, Fibonacci story points, and JIRA-ready tickets.
+Setup symlinks the skill and commands into `~/.claude/` for global discovery. Start `claude` from any directory — no flags needed.
 
-### 2. Bug/Incident Root Cause Analysis
+### Cowork (Claude Desktop)
 
-Describe a production bug or incident. The generator asks forensic questions (timeline, affected systems, error logs), then produces a focused PRD with root cause analysis, fix requirements, regression tests, and prevention measures — all verified claim-by-claim.
+Enable the plugin in Cowork. No setup required — the MCP server starts automatically.
 
-### 3. MVP with Scope Control
+## Examples
 
-Submit an ambitious feature request. The generator detects excessive scope, offers a choice between full roadmap overview (T-shirt sizing) or focused epic PRD (full implementation specs). Choose one epic to get sprint-ready tickets while keeping the full vision documented.
+See the `examples/` directory for a complete 4-file PRD output (Snippet Library CRUD feature):
 
-## Environment Support
+- `PRD-SnippetLibraryCRUD.md` — Full PRD with 11 sections
+- `PRD-SnippetLibraryCRUD-jira.md` — JIRA tickets with story points
+- `PRD-SnippetLibraryCRUD-tests.md` — Unit, integration, and e2e test cases
+- `PRD-SnippetLibraryCRUD-verification.md` — Claim-by-claim verification (94% score)
 
-| Environment | Codebase Analysis | GitHub Access | RAG Database |
-|-------------|-------------------|---------------|--------------|
-| **CLI** (Claude Code) | Local dirs + GitHub URLs | Full (gh CLI or MCP tools) | PostgreSQL + pgvector |
-| **Cowork** (Claude Desktop) | Local shared dirs only | Not available (network restricted) | File-based (Glob/Grep/Read) |
+## Troubleshooting
 
-## Technical Details
+**Commands not found after setup**
+Run `./scripts/setup.sh` again. Verify symlinks exist at `~/.claude/skills/ai-prd-generator/` and `~/.claude/commands/ai-prd-generator/`.
 
-- **MCP Server**: Zero-dependency Node.js (runs on Node.js 22 pre-installed in Cowork)
-- **License Verification**: Ed25519 digital signatures, AES-256 encrypted persistence
-- **Transport**: stdio (JSON-RPC 2.0)
-- **Plugin Size**: ~160KB (SKILL.md + MCP server + config)
+**License key not recognized**
+Ensure the key starts with `AIPRD-`. Run `/ai-prd-generator:validate-license AIPRD-your-key` to activate. The key is validated once and saved locally.
 
-## Support
+**Clarification loop stuck**
+At 95%+ confidence, you can say "proceed" to start generation. On free tier, generation starts automatically after 3 rounds.
 
-- Website: [aiprd.dev](https://aiprd.dev)
-- Email: support@aiprd.dev
-- Issues: [GitHub Issues](https://github.com/cdeust/ai-prd-generator-plugin/issues)
+## Requirements
+
+- Node.js 18+
+- Claude Code CLI or Cowork
+
+## Author
+
+Clement Deust (admin@ai-architect.tools)
+
+## Version
+
+1.0.0
