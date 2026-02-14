@@ -7,15 +7,26 @@
     "default_tier": "free",
     "validation": {
       "method": "cryptographic",
+      "validator_binary": "~/.aiprd/validate-license",
+      "build_command": "make build-validator",
       "verification": {
         "license_file": "Ed25519 signature + hardware fingerprint + expiry",
         "trial_file": "HMAC-SHA256 tamper detection + hardware fingerprint + expiry"
       }
     },
     "license_resolution": [
-      { "priority": 1, "source": "~/.aiprd/.lk", "condition": "AES-256 decrypted, Ed25519 verified, not expired", "result": "licensed" },
-      { "priority": 2, "source": "default", "condition": "no valid activation", "result": "free" }
+      { "priority": 1, "source": "~/.aiprd/license.json", "condition": "Ed25519 signature verified, hardware match, not expired", "result": "licensed" },
+      { "priority": 2, "source": "~/.aiprd/trial.json", "condition": "HMAC valid, hardware match, not expired", "result": "trial" },
+      { "priority": 3, "source": "auto-create trial", "condition": "no existing trial", "result": "trial" },
+      { "priority": 4, "source": "default", "condition": "validator missing or all checks fail", "result": "free" }
     ],
+    "trial": {
+      "duration_days": 14,
+      "storage_path": "~/.aiprd/trial.json",
+      "features": "licensed",
+      "purchase_url": "https://ai-architect.tools/purchase",
+      "security": "HMAC-SHA256 keyed from hardware fingerprint"
+    },
     "free_tier": {
       "strategies": ["zero_shot", "chain_of_thought"],
       "prd_contexts": ["feature", "bug"],
@@ -446,8 +457,7 @@
   "integrations": {
     "github": {
       "enabled": true,
-      "auth_methods": ["device_flow", "gh_cli", "env_token"],
-      "client_id": "",
+      "auth_method": "gh_cli",
       "scopes": ["repo", "read:org"]
     },
     "jira": {
@@ -462,7 +472,7 @@
     "name": "ai-prd-generator",
     "version": "1.0.0",
     "engine_home": "~/.aiprd",
-    "install_command": "scripts/setup.sh",
+    "install_command": "make install-engine",
     "mcp_server": {
       "transport": "stdio",
       "command": "node ${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js",

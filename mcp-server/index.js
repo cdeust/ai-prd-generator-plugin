@@ -297,6 +297,137 @@ function _loadPersistedKey() {
 const POLAR_ORG_ID = "3c29257d-7ddb-4ef1-98d4-3d63c491d653";
 const POLAR_SANDBOX_ORG_ID = "33bddceb-c04b-40f7-a881-54402f1ddd4f";
 
+// ---------------------------------------------------------------------------
+// Periodic Polar Re-validation — detects subscription cancellations & renewals
+// ---------------------------------------------------------------------------
+
+const POLAR_REVALIDATION_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+let _renewalInProgress = false;
+
+function _needsRevalidation(licenseResult) {
+  if (!licenseResult || licenseResult.source !== "polar_key") return false;
+  // Parse the stored token to check validated_at
+  const storedKey = _loadPersistedKey();
+  if (!storedKey) return false;
+  try {
+    const decoded = Buffer.from(storedKey.slice(6), "base64").toString("utf8");
+    const license = JSON.parse(decoded);
+    if (!license.validated_at) return true;
+    const validatedAt = new Date(license.validated_at).getTime();
+    const age = Date.now() - validatedAt;
+    if (age > POLAR_REVALIDATION_INTERVAL_MS) return true;
+    // Also revalidate if expires_at is within 7 days (catch renewals early)
+    if (license.expires_at) {
+      const daysUntilExpiry = (new Date(license.expires_at) - new Date()) / 86_400_000;
+      if (daysUntilExpiry <= 7) return true;
+    }
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function _revalidateWithPolar(storedToken) {
+  let license;
+  try {
+    const decoded = Buffer.from(storedToken.slice(6), "base64").toString("utf8");
+    license = JSON.parse(decoded);
+  } catch (_) {
+    return;
+  }
+  if (!license.polar_uuid) return;
+
+  let polarResult;
+  try {
+    polarResult = await _validateWithPolar(license.polar_uuid);
+  } catch (_) {
+    // Network error — keep current token, retry next check
+    return;
+  }
+
+  if (polarResult.status === "granted") {
+    // Build fresh token with updated expires_at and validated_at
+    const freshToken = _polarResponseToToken(polarResult, license.polar_uuid);
+    const freshResult = _activateFromKey(freshToken);
+    if (freshResult) {
+      _cachedLicense = freshResult;
+      _persistKey(freshToken);
+      process.stderr.write("[ai-prd-generator] Polar re-validation: license refreshed\n");
+    }
+  } else if (polarResult.status === "revoked" || polarResult.status === "disabled") {
+    // Key revoked or disabled — drop to free tier
+    try { fs.unlinkSync(_storageLocation()); } catch (_) {}
+    _cachedLicense = null;
+    process.stderr.write(`[ai-prd-generator] Polar re-validation: key ${polarResult.status}, reverting to free tier\n`);
+  }
+}
+
+function _maybeScheduleRevalidation(licenseResult, storedToken) {
+  if (_renewalInProgress) return;
+  if (!_needsRevalidation(licenseResult)) return;
+  _renewalInProgress = true;
+  _revalidateWithPolar(storedToken)
+    .catch(() => {})
+    .finally(() => { _renewalInProgress = false; });
+}
+
+// ---------------------------------------------------------------------------
+// Hardware Fingerprint Trial Guard — prevents unlimited trial abuse
+// ---------------------------------------------------------------------------
+
+function _hardwareFingerprint() {
+  return crypto.createHash("sha256")
+    .update(`aiprd:${os.hostname()}:${os.userInfo().username}:${PLUGIN_ROOT}`)
+    .digest("hex");
+}
+
+function _trialRecordPath() {
+  return path.join(ENGINE_HOME, ".mcp-trial-record");
+}
+
+function _hasUsedTrial() {
+  try {
+    const data = fs.readFileSync(_trialRecordPath(), "utf8");
+    const record = JSON.parse(data);
+    const fingerprint = _hardwareFingerprint();
+    // Verify HMAC
+    const payload = `TRIAL-RECORD|${record.fingerprint}|${record.activated_at}`;
+    const expectedHmac = crypto.createHmac("sha256", fingerprint).update(payload).digest("hex");
+    if (record.hmac !== expectedHmac) return false;
+    // Verify fingerprint matches current device
+    if (record.fingerprint !== fingerprint) return false;
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function _recordTrialUsage() {
+  try {
+    const fingerprint = _hardwareFingerprint();
+    const activatedAt = new Date().toISOString();
+    const payload = `TRIAL-RECORD|${fingerprint}|${activatedAt}`;
+    const hmac = crypto.createHmac("sha256", fingerprint).update(payload).digest("hex");
+    const record = JSON.stringify({ fingerprint, activated_at: activatedAt, hmac });
+    const dir = path.dirname(_trialRecordPath());
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(_trialRecordPath(), record, { mode: 0o600 });
+  } catch (e) {
+    process.stderr.write(`[ai-prd-generator] Could not record trial usage: ${e.message}\n`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Product Type Detection — trial vs monthly vs lifetime
+// ---------------------------------------------------------------------------
+
+function _detectProductType(expiresAt) {
+  if (!expiresAt) return "lifetime";
+  const days = Math.ceil((new Date(expiresAt) - new Date()) / 86_400_000);
+  if (days <= 14) return "trial";
+  return "monthly";
+}
+
 // Detect UUID-format Polar.sh keys: AIPRD-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 function _isPolarUuidKey(aiprdKey) {
   if (!aiprdKey || !aiprdKey.startsWith("AIPRD-")) return false;
@@ -334,11 +465,14 @@ async function _validateWithPolar(aiprdKey) {
 // Convert a validated Polar response into a persistable AIPRD-{base64(JSON)} token.
 // This ensures a single key format throughout the system (MCP server, Swift engine, etc.).
 function _polarResponseToToken(polarResult, originalUuid) {
+  const productType = _detectProductType(polarResult.expires_at);
   const license = {
+    benefit_id: polarResult.benefit_id || null,
     email: (polarResult.customer || {}).email || "polar-customer",
     enabled_features: getFeaturesListForTier("licensed"),
     expires_at: polarResult.expires_at || null,
     polar_uuid: originalUuid,
+    product_type: productType,
     tier: "licensed",
     validated_at: new Date().toISOString(),
   };
@@ -365,6 +499,7 @@ function _activateFromKey(aiprdKey) {
     return {
       tier: license.tier || "licensed",
       features: license.enabled_features || getFeaturesListForTier(license.tier || "licensed"),
+      product_type: license.product_type || _detectProductType(license.expires_at),
       signature_verified: false,
       hardware_verified: false,
       expires_at: license.expires_at || null,
@@ -396,7 +531,12 @@ function _activateFromKey(aiprdKey) {
 
 function validateLicense() {
   // 1. Return cached result if already resolved this session
-  if (_cachedLicense) return _cachedLicense;
+  if (_cachedLicense) {
+    // Schedule background re-validation if needed (fire-and-forget)
+    const storedKey = _loadPersistedKey();
+    if (storedKey) _maybeScheduleRevalidation(_cachedLicense, storedKey);
+    return _cachedLicense;
+  }
 
   // 2. Try loading from encrypted store (persisted by a previous activate_license)
   const storedKey = _loadPersistedKey();
@@ -404,11 +544,13 @@ function validateLicense() {
     const result = _activateFromKey(storedKey);
     if (result) {
       _cachedLicense = result;
+      // Schedule background re-validation if needed (fire-and-forget)
+      _maybeScheduleRevalidation(result, storedKey);
       return result;
     }
   }
 
-  // 4. No activation — default to free tier
+  // 3. No activation — default to free tier
   return freeTierResult();
 }
 
@@ -503,10 +645,14 @@ function getFeaturesForTier(tier) {
 const TOOLS = {
   validate_license: {
     description:
-      "Validate the current license tier. Returns tier, features, and validation details. Uses built-in Ed25519 verification.",
+      "Validate the current license tier. Returns tier, features, product type, and validation details. Uses built-in Ed25519 verification.",
     inputSchema: { type: "object", properties: {}, required: [] },
     handler(_args) {
-      return validateLicense();
+      const result = validateLicense();
+      return {
+        ...result,
+        product_type: result.product_type || null,
+      };
     },
   },
 
@@ -558,16 +704,36 @@ const TOOLS = {
         if (!result) {
           return { activated: false, error: "Internal error creating activation record." };
         }
+
+        // Trial guard: prevent multiple trial activations on the same device
+        if (result.product_type === "trial") {
+          if (_hasUsedTrial()) {
+            return {
+              activated: false,
+              error: "Trial already used on this device. Purchase a monthly or lifetime license to continue.",
+            };
+          }
+          _recordTrialUsage();
+        }
+
         _cachedLicense = result;
         _persistKey(derivedToken);
+
+        // Product-type-specific success messages
+        const messages = {
+          trial: "14-day trial activated! Full access to all features.",
+          monthly: "Monthly subscription activated — renews automatically.",
+          lifetime: "Lifetime license activated — never expires.",
+        };
 
         return {
           activated: true,
           tier: result.tier,
+          product_type: result.product_type,
           features: result.features,
           expires_at: result.expires_at,
           days_remaining: result.days_remaining,
-          message: `License activated! You now have full access to all licensed features.`,
+          message: messages[result.product_type] || "License activated! You now have full access to all licensed features.",
         };
       }
 
@@ -599,6 +765,7 @@ const TOOLS = {
       return {
         activated: true,
         tier: result.tier,
+        product_type: result.product_type || null,
         features: result.features,
         expires_at: result.expires_at,
         days_remaining: result.days_remaining,
