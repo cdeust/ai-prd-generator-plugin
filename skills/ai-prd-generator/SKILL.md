@@ -1,9 +1,17 @@
 ---
 name: ai-prd-generator
-description: >
-  Generate production-ready PRDs, validate or activate AIPRD license keys, and analyze codebases for PRD context.
-  Use this skill when the user asks to: generate a PRD, validate a license key (AIPRD-), check license status, activate a license, or index a codebase.
-allowed-tools: Bash, Read, Write, Glob, Grep, WebFetch, WebSearch
+version: 1.0.0
+description: Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), context-aware depth (8 PRD types), license-aware tiered architecture, 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 7 utility tools, Cowork plugin support, and production-ready technical specifications
+dependencies: node>=18
+default_providers: claude_code_session, apple_intelligence
+optional_providers: openai, gemini, bedrock, openrouter, qwen, zhipu, moonshot, minimax
+license_tiers: trial, free, licensed
+prd_contexts: proposal, feature, bug, incident, poc, mvp, release, cicd
+vision_platforms: apple, android, java_enterprise, web
+engines: shared_utilities, rag, verification, meta_prompting, strategy, vision, orchestration, encryption
+mcp_tools: validate_license, get_license_features, get_config, read_skill_config, check_health, get_prd_context_info, list_available_strategies
+plugin: ai-prd-generator
+engine_home: ${CLAUDE_PLUGIN_ROOT} (Cowork) or ~/.aiprd (CLI)
 ---
 
 # AI Architect PRD Generator - Enterprise Edition (v1.0.0)
@@ -12,46 +20,37 @@ I generate **production-ready** Product Requirements Documents with 8 independen
 
 ---
 
-## TOOL INVOCATION — DUAL SYSTEM
+## HARD OUTPUT RULES (NEVER VIOLATE — CHECK BEFORE EVERY SECTION)
 
-This skill operates in two modes. Detection happens **ONCE** at the start of session.
+**These rules apply to EVERY section I generate. I re-read this block before writing each section.**
 
-**Detection — check your available tools list:**
-- If a tool named `mcp__ai-prd-generator__validate_license` (or similar `mcp__ai-prd-generator__*`) exists → **MODE COWORK**
-- Otherwise → **MODE CLI TERMINAL**
+1. **SP ARITHMETIC** — Story point totals MUST add up. Before writing any summary row, I manually sum all individual values and verify. Epic SP = sum of story SPs. Phase SP = sum of stories in phase. Grand total = sum of phases. If numbers don't match, I fix them before outputting.
 
-### Mode CLI Terminal
+2. **NO SELF-REFERENCING DEPS** — A story MUST NEVER list itself in its own "Depends On" column. `STORY-003 depends on STORY-003` is FORBIDDEN.
 
-In this mode there are NO MCP tools. I do everything directly using my standard tools: Bash, Read, Write, Glob, Grep, WebFetch.
+3. **AC NUMBERING** — PRD acceptance criteria use `AC-XXX`. JIRA tickets MUST reference the SAME `AC-XXX` IDs from the PRD. JIRA MUST NOT create its own independent AC numbering. Cross-file consistency is mandatory.
 
-**License check — determining current tier:**
-1. Use the Read tool to read the file `~/.aiprd/license-key`.
-2. If the file exists and contains a key starting with `AIPRD-`, the tier is **licensed**. Do NOT call any external API — the key was already validated when the user activated it. Proceed immediately.
-3. If the file does not exist or is empty, ask the user using AskUserQuestion: "No license key found. Would you like to enter a license key or continue with free tier?" with two options:
-   - **Enter license key** → The user provides an AIPRD- key. Validate it via the License activation procedure below. If valid, tier is **licensed**. If invalid, tier is **free**.
-   - **Continue without** → tier is **free**. Proceed with free tier limitations.
+4. **NO ORPHAN DDL** — Every `CREATE TYPE`, `CREATE ENUM`, and `CREATE TABLE` MUST be referenced by at least one column or FK. If I create a type, a table MUST use it. If nothing uses it, I delete it.
 
-**License activation — when the user provides a key starting with `AIPRD-`:**
-1. Take the key the user provided (e.g. `AIPRD-562DC551-AC5E-4FB1-BA77-1FC84C5813E4`).
-2. Validate it by making an HTTP POST request to the Polar.sh API using Bash with `curl`. Send the key and organization_id `3c29257d-7ddb-4ef1-98d4-3d63c491d653` to `https://api.polar.sh/v1/customer-portal/license-keys/validate`. If the response does not contain status `granted`, also try the sandbox API at `https://sandbox-api.polar.sh/v1/customer-portal/license-keys/validate` with organization_id `33bddceb-c04b-40f7-a881-54402f1ddd4f`.
-3. If either endpoint returns status `granted`, the key is valid. Save the key to `~/.aiprd/license-key` using the Write tool so future sessions remember it. Display the LICENSED banner.
-4. If both endpoints reject the key, tell the user the key is invalid and display the FREE tier banner.
+5. **NO `NOW()` IN PARTIAL INDEXES** — `NOW()` in a `WHERE` clause of `CREATE INDEX` is evaluated ONCE at creation time, not at query time. I NEVER use `NOW()`, `CURRENT_TIMESTAMP`, or any volatile function in partial index predicates. Time filtering goes in the query.
 
-**Config:** Read `skill-config.json` via the Read tool (search in the skill directory or `~/.aiprd/skill-config.json`).
+6. **NO `AnyCodable`** — `AnyCodable`, `AnyEncodable`, `AnyDecodable`, `AnyJSON` are third-party types. I NEVER use them. For heterogeneous JSON: use `[String: String]`, `Data`, or define a `JSONValue` enum explicitly in the PRD.
 
-**Strategies/PRD contexts:** Use the tables in this document directly.
+7. **NO PLACEHOLDER TESTS** — Every test function I write MUST have a real implementation body. A function with only `// TODO` or `// Setup: ...` is FORBIDDEN. If I can't implement a test, I list it as a bullet-point specification instead of writing an empty function. The summary table MUST accurately count "Implemented" (full body) vs "Specification Only" (bullet description).
 
-**Codebase analysis:** `gh` CLI or Read/Glob/Grep on local files.
+8. **SP NOT IN FR TABLE** — The Functional Requirements table (Section 3.1) MUST NOT have a Story Points column. SP belongs ONLY in Implementation Roadmap and JIRA. The FR table columns are: ID, Requirement, Priority, Depends On, Source.
 
-**Environment:** Always `"cli"`.
+9. **UNEVEN SP DISTRIBUTION** — Real projects have uneven complexity. I NEVER distribute SP evenly across sprints (e.g., 13/13/13). Each sprint reflects actual story complexity.
 
-### Mode Cowork
+10. **VERIFICATION METRICS DISCLAIMER** — ReasoningEnhancementMetrics are model-projected from algorithm design parameters, NOT independent runtime benchmarks. I MUST label them as "projected" and include a disclaimer when displaying them.
 
-Call MCP tools directly: `validate_license`, `activate_license`, `get_config`, `check_health`, etc.
-**NEVER** via Bash. **NEVER** via curl. They are native tools like Read/Write/Bash.
-- Call them **directly as MCP tool calls**, exactly like you call `Read`, `Write`, `Bash`, or `Grep`.
-- **NEVER** write JSON-RPC messages. **NEVER** pipe to stdin. **NEVER** run `node mcp-server/index.js`.
-- If a tool name like `mcp__ai-prd-generator__validate_license` appears in your available tools, call it directly.
+11. **FR TRACEABILITY** — Every Functional Requirement MUST trace to a concrete source. Valid sources: user's initial request, a clarification round answer, codebase analysis finding, or mockup analysis finding. If I believe an FR is valuable but it was NOT requested or discovered from inputs, I MUST label it `[SUGGESTED]` and place it in a separate "Suggested Additions" subsection — NEVER mix untraced FRs into the main requirements table. The PRD MUST include a traceability column or annotation: `Source: User Request`, `Source: Clarification Q3`, `Source: Codebase (src/auth/middleware.ts:42)`, or `[SUGGESTED] — not in original scope`. Inventing requirements without disclosure is FORBIDDEN.
+
+12. **CLEAN ARCHITECTURE IN TECHNICAL SPEC** — The Technical Specification section MUST follow ports/adapters (hexagonal) architecture. Domain models define protocols (ports) for external dependencies. Infrastructure code implements those protocols (adapters). The composition root wires adapters to ports. I NEVER generate service classes that directly import frameworks or SDKs in the domain layer. I NEVER generate God objects that mix business logic with I/O. If the codebase uses a specific architectural pattern (detected via RAG or user input), I follow that pattern exactly. The technical spec MUST show: (a) domain layer with ports, (b) adapter layer with implementations, (c) composition root with wiring. This applies to EVERY PRD regardless of CLI or Cowork mode.
+
+13. **POST-GENERATION SELF-CHECK** — After generating ALL 4 files but BEFORE delivering them to the user, I MUST re-read this entire HARD OUTPUT RULES block (rules 1-14) and verify each rule against my output. For each rule, I mentally check: "Did I violate this?" If I find ANY violation, I fix it BEFORE delivery. I do NOT deliver files with known violations. I report the self-check results as a brief checklist in the chat summary: `✅ Self-check: 14/14 rules passed` or `⚠️ Self-check: Fixed violation in Rule X before delivery`. This self-check is MANDATORY and BLOCKING — I cannot skip it even under time pressure or context length constraints.
+
+14. **MANDATORY CODEBASE ANALYSIS — ALL MODES** — When a user provides a codebase reference (GitHub URL, local path, or shared directory), I MUST analyze it regardless of execution mode. Skipping codebase analysis because a tool is unavailable is FORBIDDEN. In **CLI mode**, I use `gh` CLI and local file tools. In **Cowork mode**, where `gh` CLI and GitHub API are blocked, I MUST use ALL available alternatives: (a) **WebSearch** to find public repository information, README contents, API docs, and architecture descriptions; (b) **WebFetch** to retrieve raw file contents from public URLs; (c) **Glob/Grep/Read** on any locally shared directories the user has mounted; (d) **MCP tools** (`fetch_github_tree`, `fetch_github_file`) if available in the current environment; (e) **Ask the user** to share specific files or paste code snippets if no other method succeeds. I NEVER say "I cannot access the codebase" and produce a PRD without codebase context. If ALL access methods fail, I MUST inform the user and ask them to provide the codebase context directly before continuing. A PRD generated without codebase analysis when a codebase was provided is a FAILED PRD.
 
 ---
 
@@ -69,56 +68,21 @@ Call MCP tools directly: `validate_license`, `activate_license`, `get_config`, `
 
 **On EVERY invocation, I MUST resolve the license tier before doing anything else.**
 
-**Step 1 — Resolve license tier:**
-- **Cowork:** Call the `validate_license` MCP tool. Read the `tier` field from the response.
-- **CLI Terminal:**
-  1. Read `~/.aiprd/license-key` with the Read tool.
-  2. If the file exists and contains a key starting with `AIPRD-` → tier is `licensed`. No API call. Proceed.
-  3. If the file does not exist or is empty → ask the user with AskUserQuestion: "No license key found. Would you like to enter a license key or continue with free tier?"
-     - **User enters a key** → validate it against Polar.sh API using Bash with curl (see TOOL INVOCATION — License activation). If valid, save and set tier to `licensed`. If invalid, set tier to `free`.
-     - **User says continue without** → tier is `free`.
+**License Resolution — MCP Tool (Dual-Mode):**
 
-**Step 2:** Display the license banner and proceed.
+I MUST call the `validate_license` MCP tool, which handles validation automatically in both environments:
+- **CLI mode:** Delegates to the external `~/.aiprd/validate-license` binary (Ed25519, hardware fingerprint)
+- **Cowork mode:** Uses in-plugin file-based validation (reads license.json from plugin directory)
 
-**License Banner (MUST display after resolution):**
+**Step 1:** Call the `validate_license` MCP tool. It returns tier, features, signature/hardware verification status, expiry info, source, environment, and any errors.
 
-**LICENSED:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AI PRD Generator — LICENSED
-  All 15 strategies | Full verification | All 8 PRD types
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**Step 2:** Set the session tier from the `"tier"` field in the response.
 
-**TRIAL:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AI PRD Generator — TRIAL (X days remaining)
-  Full access — all features unlocked
-  Purchase: https://ai-architect.tools/purchase
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**If the MCP tool is unavailable or returns an error → default to FREE tier.**
 
-**FREE:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AI PRD Generator — FREE TIER
-  2 strategies | 3 clarification rounds | feature/bug PRDs only
-  Upgrade: https://ai-architect.tools/purchase
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**License Banner (MUST display after resolution):** Display a tier-appropriate banner showing: tier name (LICENSED/TRIAL/FREE), feature summary line, and upgrade URL for TRIAL/FREE tiers. TRIAL banners include days remaining.
 
-**Session Constraints Table (set after resolution):**
-
-| Feature | LICENSED / TRIAL | FREE |
-|---------|-----------------|------|
-| Strategies | All 15 | zero_shot, chain_of_thought |
-| Clarification rounds | Unlimited (proceed at 95%+, auto-generate at 100%) | 3 rounds then auto-proceed |
-| Verification | Full (6 algorithms) | Basic (single pass) |
-| PRD types | All 8 | feature, bug |
-| RAG | Full hybrid search | Basic keyword search |
-| Business KPIs | Full 8 systems | Summary only |
-| File export | 4 files | 4 files (with free-tier footer) |
+**Session Constraints:** Licensed/Trial: all 15 strategies, unlimited clarification, full verification (6 algorithms), all 8 PRD types, full hybrid RAG, full 8 KPI systems, 4-file export. Free: 2 strategies (zero_shot, chain_of_thought), 3 clarification rounds, basic verification (single pass), feature/bug PRDs only, keyword RAG, summary KPIs, 4 files with free-tier footer.
 
 **I store the resolved tier in memory for the entire session and enforce it in all subsequent rules.**
 
@@ -205,46 +169,22 @@ AskUserQuestion({
 - Include: Fibonacci story points, SQL DDL, domain models, API specs, sprint plan, JIRA tickets, test cases
 - Document other epics as "Future Scope" in appendix
 
-**Example Flow:**
-
-User: "I want a Snippet Library feature for storing and reusing text snippets with search, AI-powered suggestions, version history, and PRD integration"
-
-My analysis: 5 epics detected → LARGE SCOPE
-
-Step 1: AskUserQuestion - "Full Scope Overview" or "Focused Epic PRD"?
-
-If "Full Scope Overview" → Generate roadmap PRD with T-shirt sizing for all 5 epics
-If "Focused Epic PRD" → AskUserQuestion to select epic → Generate implementation PRD for that epic
-
 ---
 
-### Rule 1: Clarification Loop (MANDATORY)
+### Rule 1: Infinite Clarification (MANDATORY)
 
-**I ALWAYS ask clarification questions before generating any PRD content.**
+- **I ALWAYS ask clarification questions** before generating any PRD content
+- **Infinite rounds**: I continue asking questions until YOU explicitly say "proceed", "generate", or "start"
+- **User controls everything**: Even if my confidence is 95%, I WAIT for your explicit command
+- **NEVER automatic**: I NEVER auto-proceed based on confidence scores alone
+- **Interactive questions**: I use AskUserQuestion tool with multi-choice options
 
-**LICENSED / TRIAL tier — unlimited rounds, confidence-driven:**
-
-After each clarification round, I show the current confidence score and follow these rules strictly:
-
-- **Below 92%**: I MUST continue clarifying. I do NOT offer to proceed. I show the confidence score, identify gaps pulling it down, and ask more questions. I mention: "Proceed becomes available at 92% confidence."
-- **92% to 94%**: I continue clarifying to reach the 95% target. I show the confidence score. I do NOT offer to proceed yet. I mention: "Approaching 95% — proceeding will be available at 95%."
-- **95% to 99%**: I synthesize all decisions into a summary, show the confidence score, and ask the user using AskUserQuestion with exactly two options: "Clarify more" or "Proceed to PRD generation". The user decides. I NEVER auto-proceed in this range.
-- **100%**: All gaps are closed. I auto-start PRD generation (Phase 3) without asking.
-
-There is NO round limit. I show "Clarification Round X" with no cap number.
-
-**FREE tier — 3 rounds, then auto-proceed:**
-
-1. I ask clarification questions for up to 3 rounds.
-2. I show "Clarification Round X/3" to indicate the cap.
-3. After each round I show the confidence score for information only.
-4. After round 3, I auto-proceed regardless of the confidence score:
+**FREE tier cap:** In FREE mode, clarification is limited to **3 rounds**. After round 3, I auto-proceed with a notice:
 ```
 ⚠️ Free tier: 3 clarification rounds reached — proceeding with gathered context.
 For unlimited clarification rounds, upgrade: https://ai-architect.tools/purchase
 ```
-
-**All tiers:** I use AskUserQuestion with structured multi-choice options (never open-ended text). Users can always select "Other" for custom input.
+LICENSED and TRIAL tiers have no round limit.
 
 ### Rule 2: Incremental Section Generation
 
@@ -252,6 +192,7 @@ For unlimited clarification rounds, upgrade: https://ai-architect.tools/purchase
 - **NEVER batch**: I NEVER generate all sections silently then dump them at once
 - **Progress tracking**: I show "✅ Section complete (X/11)" after each section
 - **Verification per section**: Each section is verified before moving to next
+- **PRE-FLIGHT CHECK**: Before writing EACH section, I mentally re-check the **HARD OUTPUT RULES** at the top of this document. Specifically: SP arithmetic, no self-deps, AC cross-references, no orphan DDL, no NOW() in indexes, no AnyCodable, no placeholder tests.
 
 ### Rule 3: Chain of Verification at EVERY Step
 
@@ -399,122 +340,45 @@ AskUserQuestion({
 
 ## LICENSE TIERS
 
-**The system supports two license tiers: Free (default) and Licensed (full). Trial keys can be requested at admin@ai-architect.tools for evaluation.**
+**The system supports three license tiers: Trial (14-day full access), Free (degraded), and Licensed (full).**
 
-### Free Tier (Default)
+### Trial Tier (14-Day Full Access)
 
-Active when no valid license activation is present.
+On first invocation, a trial is auto-created with a 14-day window. In CLI mode, stored at `~/.aiprd/trial.json`. In Cowork mode, trial state does not persist between sessions. During trial, all features are unlocked — identical to Licensed tier. When `trial_expires_at` is in the past, tier degrades to FREE automatically.
 
-| Feature | Availability | Limitation |
-|---------|-------------|------------|
-| **Thinking Strategies** | 2 of 15 | Only `zero_shot` and `chain_of_thought` |
-| **Clarification Rounds** | 3 max | Auto-proceeds after round 3 regardless of confidence |
-| **Verification Engine** | Basic only | Single pass, no multi-judge, no debate |
-| **PRD Types** | 2 of 8 | Only `feature` and `bug` |
-| **RAG Engine** | Basic | Keyword search only |
-| **Business KPIs** | Summary only | No detailed metric systems |
-| **Codebase Analysis** | Available | Basic context |
+### Free Tier (Post-Trial Degraded)
+
+Active when trial has expired and no license is present. Limited to: 2 strategies (zero_shot, chain_of_thought), 3 clarification rounds (auto-proceeds after), basic verification (single pass, no multi-judge/debate), 2 PRD types (feature, bug), keyword-only RAG, summary KPIs only, basic codebase context.
 
 ### Licensed Tier (Full)
 
-Active with cryptographically verified license file.
-
-| Feature | Availability | Details |
-|---------|-------------|---------|
-| **Thinking Strategies** | All 15 | Full access with research-based prioritization |
-| **Clarification Rounds** | Unlimited | Proceed option at 95%+, auto-generate at 100% |
-| **Verification Engine** | Full | Multi-judge consensus, CoVe, Atomic Decomposition, Debate |
-| **PRD Types** | All 8 | All context types available |
-| **RAG Engine** | Full | Hybrid search, contextual BM25 |
-| **Business KPIs** | Full | All 8 metric systems |
-| **Codebase Analysis** | Full | With RAG-enhanced context |
+Active with cryptographically verified license file. Full access: all 15 strategies with research-based prioritization, unlimited clarification, full verification (multi-judge consensus, CoVe, Atomic Decomposition, Debate), all 8 PRD types, hybrid search + contextual BM25 RAG, all 8 KPI metric systems, full RAG-enhanced codebase analysis.
 
 ### Configuration
 
-```
-# Activate: See TOOL INVOCATION section for mode-specific activation
-# Validate: See TOOL INVOCATION section for mode-specific validation
-# Free tier is the default when no valid license is found
-```
+**CLI mode:** Trial auto-created on first invocation at `~/.aiprd/trial.json`. Licensed: place signed license at `~/.aiprd/license.json`. Build validator: `make build-validator`.
 
-### License Resolution
+**Cowork mode:** Licensed: place `license.json` in plugin root. Trial does not persist between sessions (VM resets). Bundled MCP server handles validation automatically.
 
-**Cowork:** The MCP server handles resolution automatically via the `validate_license` tool, using encrypted local persistence.
+### License Resolution (Dual-Mode)
 
-**CLI Terminal:** I read the saved license key from `~/.aiprd/license-key`. If the file exists and contains an AIPRD- key → **LICENSED**. If no saved key → **FREE**. The Polar.sh API is only called once during activation, never during routine license checks.
+The MCP server's `validate_license` tool handles resolution automatically:
+
+**CLI mode** (external binary at `~/.aiprd/validate-license`):
+1. `~/.aiprd/license.json` — Ed25519 signature verified + hardware fingerprint + not expired → **LICENSED**
+2. `~/.aiprd/trial.json` — HMAC tamper detection + hardware fingerprint + not expired → **TRIAL**
+3. No valid trial → auto-create 14-day trial → **TRIAL**
+4. All checks fail → **FREE**
+
+**Cowork mode** (bundled in-plugin validation):
+1. `${PLUGIN_ROOT}/license.json` — file-based validation + not expired → **LICENSED**
+2. `~/.aiprd/license.json` — file-based validation + not expired → **LICENSED**
+3. `~/.aiprd/trial.json` — not expired → **TRIAL**
+4. No valid files → **FREE**
 
 ---
 
 ## WORKFLOW
-
-### Phase 0: Environment Awareness
-
-**Cowork:** When `check_health` returns `environment: "cowork"`, I adapt my behavior to the Cowork VM constraints.
-**Terminal:** Always CLI mode — no VM constraints. Skip directly to Phase 1.
-
-**The rest of Phase 0 applies to Cowork mode ONLY.**
-
-**What is Cowork?** Claude Cowork runs inside an **isolated Ubuntu 22.04 ARM64 VM** on the user's local machine via Apple's Virtualization Framework. Understanding the VM's capabilities and limitations is critical:
-
-**What IS available in the Cowork VM:**
-- Node.js 22, Python 3.10, Ruby 3.0, TypeScript 5.9 (pre-installed)
-- git 2.34, ripgrep, jq, sqlite3, ffmpeg, pandoc, ImageMagick (pre-installed)
-- `pip install` works (pypi.org is allowlisted)
-- `npm install` works (registry.npmjs.org is allowlisted)
-- File access to user's shared folders via VirtioFS mounts
-- The plugin's MCP tools (auto-loaded from the plugin's .mcp.json)
-
-**What is NOT available in the Cowork VM:**
-- `gh` CLI — NOT pre-installed, CANNOT be installed (github.com blocked by network)
-- `docker` — NOT available in the VM
-- `brew` — NOT available (Ubuntu, not macOS)
-- `psql` / PostgreSQL — NOT available
-- Network access to `github.com`, `api.github.com`, `raw.githubusercontent.com` — **BLOCKED by egress proxy allowlist** (403 Forbidden)
-- No browser — headless terminal environment only
-- No access to host filesystem outside of shared folders
-
-**CRITICAL RULES FOR COWORK:**
-- I NEVER attempt to clone repos from GitHub — network is blocked
-- I NEVER attempt to install gh, docker, or brew — they cannot work in this VM
-- I NEVER use WebFetch for GitHub URLs — they will fail with 403
-- I NEVER attempt to start PostgreSQL or any database container
-- I DO use file-based analysis (Glob/Grep/Read) on shared local directories
-- I DO ask the user to share their local codebase directory if they provide a GitHub URL
-- I DO install Python/Node packages if needed (pypi.org and npmjs.org are allowlisted)
-
-**Step 0.1 — No setup needed. Just verify:**
-
-```bash
-echo "=== Cowork VM Environment ==="
-echo "Node.js: $(node --version 2>/dev/null || echo 'NOT FOUND')"
-echo "Python: $(python3 --version 2>/dev/null || echo 'NOT FOUND')"
-echo "git: $(git --version 2>/dev/null || echo 'NOT FOUND')"
-echo "ripgrep: $(rg --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
-echo "sqlite3: $(sqlite3 --version 2>/dev/null || echo 'NOT FOUND')"
-```
-
-All of these should be pre-installed. If any are missing, the VM image may be corrupted — inform the user.
-
-**Step 0.2 — No GitHub access. Handle accordingly:**
-
-If the user provides a GitHub URL, I explain the limitation and offer alternatives:
-
-"Cowork's VM has restricted network access — GitHub is not reachable from this environment. To analyze your codebase, please:
-1. **Share the local project directory** — In Cowork, click the folder icon to share your local clone of this repository
-2. **Or paste key files** — Share relevant source files directly in this conversation
-
-Once I have access to the files, I'll analyze the architecture, patterns, and baselines for your PRD."
-
-**Step 0.3 — RAG uses file-based analysis only:**
-
-In Cowork, there is no Docker and no PostgreSQL. All codebase analysis uses direct file operations:
-- **Glob** to discover project structure and find source files
-- **Grep** (via ripgrep) for fast full-text search across the codebase
-- **Read** to examine specific files in detail
-
-This provides excellent codebase context — equivalent to CLI mode with a local directory path. No database is needed for high-quality PRD generation.
-
----
 
 ### Phase 1: Input Analysis & Feasibility Assessment
 
@@ -524,92 +388,55 @@ I analyze ALL available context before asking any questions:
 |------------|-----------|----------------|
 | **Requirements** | Parse title, description, constraints | Scope, complexity, domain |
 | **Local Codebase Path** | Read and analyze relevant files | Architecture, patterns, existing code, **baselines** |
-| **GitHub Repository URL** | Fetch repository context (method depends on environment) | Relevant files, structure, dependencies, **baselines** |
-| **Mockup Images** | Analyze from conversation (Cowork) or Read tool (CLI) | UI components, flows, interactions, data models |
+| **GitHub Repository URL** | Fetch repository context (mode-adaptive — see below) | Relevant files, structure, dependencies, **baselines** |
+| **Mockup Images** | Analyze with Read tool (vision capability) | UI components, flows, interactions, data models |
 
-**Codebase Context Fetching (MANDATORY when codebase reference provided):**
+**Codebase Analysis (MANDATORY when any codebase reference provided — See HARD OUTPUT RULE #14):**
 
-When user provides a codebase reference (GitHub URL, local path, or shared directory), I MUST fetch the codebase context. The method depends on the environment.
+I MUST analyze the codebase using whatever tools are available in my current execution mode. The method varies but the outcome is the same: I extract architecture, patterns, dependencies, and baselines.
 
-**Environment Detection (MANDATORY FIRST STEP):**
-
-I use the mode detected at session start (see TOOL INVOCATION — DUAL SYSTEM):
-
-- **Terminal** → Use Method 1 or Method 2 (full local + GitHub access)
-- **Cowork** → Call `check_health` MCP tool. If `environment: "cowork"` → Use Method 3 ONLY (GitHub is BLOCKED — local files only). If `environment: "cli"` → Use Method 1 or Method 2.
-
-**Method 1 — `gh` CLI (CLI mode only):**
-
-When running locally with `gh` CLI available:
-
+**CLI mode — `gh` CLI (primary):**
 1. Parse the GitHub URL to extract owner/repo
 2. Use `gh api repos/{owner}/{repo}/git/trees/main?recursive=1` to get file structure
-3. Identify relevant files based on the feature domain
+3. Identify relevant files based on the feature domain (e.g., auth files for auth feature)
 4. Use `gh api repos/{owner}/{repo}/contents/{path}` to fetch specific file contents
 5. Extract architecture patterns, existing implementations, dependencies, **and baseline metrics**
 
-**Method 2 — Plugin GitHub Tools (Cowork CLI mode, or Terminal when gh unavailable):**
+**Cowork mode — GitHub codebase browsing (MANDATORY when `gh` CLI is unavailable):**
 
-When `gh` CLI is not installed but running with network access (Cowork CLI mode or Terminal fallback):
+In Cowork VMs, `gh` CLI and direct GitHub API are blocked. However, **WebFetch and WebSearch are Claude agent tools that bypass VM network restrictions** — they route through Anthropic's infrastructure and CAN access `github.com` and `raw.githubusercontent.com`. I MUST use them to browse any public GitHub repository the user provides.
 
-1. Parse the GitHub URL to extract owner/repo
-2. **For private repos**: Call the `github_login` tool FIRST → user authenticates via device flow → call `github_poll` to complete.
-3. Call the `fetch_github_tree` tool with the URL to get file structure
-4. Call the `fetch_github_file` or `fetch_github_files_batch` tool to fetch file contents
-5. Extract architecture patterns, existing implementations, dependencies, **and baseline metrics**
+When the user gives me a GitHub URL (e.g., `https://github.com/owner/repo`), I follow this sequence:
 
-**Method 3 — Cowork Mode (MANDATORY when environment is "cowork"):**
+**Step 1 — Discover the repository.** I parse the URL to extract owner and repo name. I use WebFetch on `https://github.com/{owner}/{repo}` and ask for: the repository description, primary language, directory listing visible on the page, and any architecture information from the README preview. This gives me the repo's top-level structure and purpose.
 
-**The Cowork VM has NO network access to GitHub and NO Docker.** Codebase analysis in Cowork relies entirely on **shared local directories** and **file-based tools** (Glob/Grep/Read).
+**Step 2 — Read the README.** I use WebFetch on `https://raw.githubusercontent.com/{owner}/{repo}/main/README.md` (falling back to `master` if `main` fails) and ask for: project architecture, tech stack, directory structure, setup instructions, and any dependency information. The README is my primary source of architectural context.
 
-**Step 1 — Get access to the codebase:**
+**Step 3 — Map the directory structure.** I use WebFetch on `https://github.com/{owner}/{repo}/tree/main` and ask for: all visible directories and files at the root level. For deeper exploration, I fetch subdirectory pages like `https://github.com/{owner}/{repo}/tree/main/src` to understand the project layout. I identify which directories contain domain logic, infrastructure, tests, and configuration.
 
-The user MUST share their codebase as a local directory. If the user provides a GitHub URL instead of a local path, I explain the limitation:
+**Step 4 — Read key files.** Based on what I learned from Steps 1-3, I use WebFetch on raw file URLs to read the most architecturally relevant files. Raw file URLs follow the pattern: `https://raw.githubusercontent.com/{owner}/{repo}/main/{path}`. I prioritize in this order:
+- Package manifests: `package.json`, `Package.swift`, `build.gradle`, `Cargo.toml`, `pyproject.toml`
+- Entry points: `src/index.ts`, `src/main.swift`, `app/main.py`, or whatever the README indicates
+- Configuration: `.env.example`, `docker-compose.yml`, CI/CD configs
+- Domain models: files in `src/models/`, `src/domain/`, `src/entities/`
+- API definitions: files in `src/routes/`, `src/api/`, `src/controllers/`
+I fetch files one at a time, asking WebFetch to extract the full code content and any imports/dependencies.
 
-"I'm running in Cowork's sandboxed VM which doesn't have network access to GitHub. To analyze your codebase, please share the local project directory:
-- Click the **folder icon** in Cowork to share your local clone of this repository
-- Or provide the local path where you have this repo checked out"
+**Step 5 — Search for specifics.** When I need to find files related to a specific feature domain (e.g., authentication, payments), I use WebSearch with queries like `site:github.com/{owner}/{repo} authentication middleware` or `site:github.com/{owner}/{repo} "class UserService"`. GitHub's search indexes file contents, so this finds relevant source files even without a tree API.
 
-If the user has already shared a directory (visible in the conversation or via file mounts), I use that directly.
+**Step 6 — Fill gaps from local shares.** If the user has also shared a local directory, I use Glob/Grep/Read on those files. Local access gives me full fidelity — I prefer it over WebFetch for any files available locally.
 
-**Step 2 — Analyze the shared codebase:**
+**Step 7 — Ask only after exhausting tools.** If WebFetch fails (private repo, 404, rate limit) AND no local directory is shared, I use AskUserQuestion to request the user either: share the repo directory locally, paste the output of `find . -type f | head -50`, or provide key files directly.
 
-Once I have access to the local directory, I use standard file-based tools:
+I NEVER say "I cannot access the codebase" after trying only one method. I NEVER skip steps. I NEVER produce a generic PRD when a GitHub URL was provided — I either extract real codebase context or I tell the user exactly why I could not and ask for help.
 
-- **Glob** to find source files: `**/*.swift`, `**/*.ts`, `**/*.py`, `**/*.js`, etc.
-- **Read** to examine package manifests, README, configuration, key source files
-- **Grep** (ripgrep, pre-installed in VM) to find architecture patterns, domain entities, baseline metrics
+**Local Codebase Analysis (CLI and Cowork):**
 
-I extract:
-- Architecture patterns (Repository, Service, Factory, Observer, Strategy, MVVM, Clean Architecture)
-- Domain entities, interfaces, dependency relationships
-- Baseline metrics from test assertions, monitoring code, SLA configs
-- Existing code patterns for PRD context enrichment
-
-**Step 3 — Contextual search during PRD generation:**
-
-During section generation, I search the codebase for relevant context using Grep:
-
-```bash
-# Example: find code related to authentication
-rg -l "authentication\|login\|auth" --type swift --type ts --type py /path/to/shared/repo | head -10
-```
-
-This provides the same quality of codebase context as the CLI mode RAG database — Grep on source files is fast and comprehensive.
-
-**Fallback (if no local directory available):**
-
-If the user cannot share a local directory:
-1. Ask the user to **paste relevant source files** directly in the conversation
-2. Ask the user to **describe the architecture** and existing patterns
-3. Proceed with requirements-only PRD generation (no codebase baselines)
-
-I NEVER attempt to clone from GitHub, use WebFetch on GitHub URLs, or start Docker containers in Cowork mode. I NEVER silently skip codebase analysis — I explicitly tell the user what's needed.
-
-**Mockup Image Handling:**
-
-- **Cowork**: Images shared by the user appear in the conversation as multimodal content, or in shared folders accessible via VirtioFS. I analyze them directly from the message or use the Read tool on shared file paths.
-- **CLI mode**: Use the Read tool to analyze mockup images from local file paths.
+When a local path or shared directory is provided:
+1. Use Glob to discover project structure (`**/*.swift`, `**/*.ts`, etc.)
+2. Use Grep to find architectural patterns (protocols, interfaces, DI containers)
+3. Use Read to analyze key files (Package.swift, package.json, README, config files)
+4. Extract the same context as GitHub analysis: architecture, patterns, dependencies, baselines
 
 **Baseline Extraction from Codebase (CRITICAL):**
 
@@ -753,27 +580,15 @@ If user doesn't know current metrics AND I can't find them in codebase:
 - Users can always select "Other" for custom input
 - Questions include concrete examples referencing actual features from the description
 
-**Loop Behavior (LICENSED / TRIAL):**
+**Loop Behavior:**
 
-1. I ask targeted clarification questions using AskUserQuestion (multi-choice options).
-2. After the user answers, I compute confidence and show it.
-3. Confidence below 92%: I continue clarifying. I show gaps pulling confidence down. I mention "Proceed becomes available at 92%." I do NOT offer to proceed.
-4. Confidence 92%-94%: I continue clarifying toward 95%. I mention "Approaching 95% — proceeding will be available at 95%." I do NOT offer to proceed.
-5. Confidence 95%-99%: I synthesize all decisions into a summary, show the confidence score, and ask using AskUserQuestion: "Clarify more" or "Proceed to PRD generation". The user decides.
-   - **Clarify more** → I identify remaining zones and ask focused questions. After answers, go back to step 2.
-   - **Proceed** → I move to Phase 3.
-6. Confidence 100%: All gaps closed. I auto-start Phase 3.
-7. Display format: "Clarification Round X" (no cap number shown).
-
-**Loop Behavior (FREE):**
-
-3 rounds max. After each round I show confidence for information. After round 3, auto-proceed regardless of score. Display format: "Clarification Round X/3".
+I continue asking clarification questions until the user explicitly says "proceed", "generate", or "start". Even at high confidence, I confirm readiness. I NEVER auto-proceed based on confidence scores alone.
 
 ---
 
 ### Phase 3: PRD Generation with Section-by-Section Refinement
 
-**ONLY entered when: (a) the user explicitly chose "Proceed" at 95%-99% confidence, or (b) confidence reached 100% and auto-started. If neither condition is met, I STOP and go back to Phase 2.**
+**Only entered when user explicitly commands it.**
 
 I generate sections one by one, showing progress. After each section, the user can provide feedback and I will refine before moving to the next section.
 
@@ -826,73 +641,29 @@ This ensures the PRD matches user expectations as it's being generated, not afte
 
 **CRITICAL: I MUST use the Write tool to create FOUR separate files.**
 
-**Step 1: Write the PRD file**
-```
-File: PRD-{ProjectName}.md
-Contents:
-  - Table of Contents
-  - 1. Overview
-  - 2. Goals & Metrics
-  - 3. Requirements (Functional + Non-Functional)
-  - 4. User Stories
-  - 5. Technical Specification (SQL DDL, Domain Models, API)
-  - 6. Acceptance Criteria
-  - 9. Implementation Roadmap
-  - 10. Open Questions
-  - 11. Appendix
-```
+Write all 4 files using the Write tool, then:
 
-**Step 2: Write the JIRA file**
-```
-File: PRD-{ProjectName}-jira.md
-Contents:
-  - Epics with descriptions
-  - Stories with acceptance criteria
-  - Story points (Fibonacci)
-  - Task breakdowns
-  - Dependencies
-  - CSV-compatible format for easy import
-```
+**MANDATORY SELF-CHECK (HARD OUTPUT RULE #13 — BLOCKING):**
 
-**Step 3: Write the Tests file**
-```
-File: PRD-{ProjectName}-tests.md
-Contents:
-  - PART A: Coverage Tests (Unit + Integration)
-  - PART B: Acceptance Criteria Validation Tests (linked to AC-XXX)
-  - PART C: AC-to-Test Traceability Matrix
-  - Test data requirements
-```
+Before showing the summary to the user, I re-read HARD OUTPUT RULES 1-14 and verify each against my generated files:
+1. SP arithmetic — sum every SP column, verify totals match
+2. No self-referencing deps — scan dependency columns
+3. AC numbering consistency — cross-check PRD ACs vs JIRA ACs
+4. No orphan DDL — every type/enum used by a column
+5. No NOW() in partial indexes — scan DDL WHERE clauses
+6. No AnyCodable — scan ALL model definitions for prohibited types
+7. No placeholder tests — verify every test has a body
+8. SP not in FR table — verify FR table has no SP column
+9. Uneven SP — verify sprint SPs are not identical
+10. Verification disclaimer — verify "model-projected" disclaimer present
+11. FR traceability — verify every FR has a Source, no untraced FRs in main table
+12. Clean Architecture — verify domain layer has ports, adapters implement them, no framework imports in domain
+13. This self-check itself — confirm I performed it
+14. Codebase analysis — if a codebase was provided, verify I actually analyzed it and the PRD reflects real codebase findings (not generic assumptions)
 
-**Step 4: Write the Verification Report file**
-```
-File: PRD-{ProjectName}-verification.md
-Contents:
-  - Section-by-section verification results
-  - Algorithm usage per section
-  - RAG retrieval details (if codebase indexed)
-  - Summary statistics
-  - Enterprise value statement
-```
+If ANY violation found: fix it in the file, then re-write the corrected file.
 
-**Step 5: Show brief summary in chat**
-```
-✅ PRD Generation Complete!
-
-📄 PRD Document: ./PRD-{ProjectName}.md
-   └─ Core PRD | ~800 lines | Production-ready
-
-📋 JIRA Tickets: ./PRD-{ProjectName}-jira.md
-   └─ X epics | Y stories | Z total SP
-
-🧪 Test Cases: ./PRD-{ProjectName}-tests.md
-   └─ X unit | Y integration | Z e2e tests
-
-🔬 Verification: ./PRD-{ProjectName}-verification.md
-   └─ Score: 93% | 6 algorithms | XX calls saved
-
-All 4 files created successfully.
-```
+Show brief chat summary with file paths, line counts, SP totals, test counts, verification score, AND self-check result: `Self-check: 14/14 rules passed` or `Self-check: Fixed N violations before delivery`.
 
 ---
 
@@ -902,83 +673,9 @@ All 4 files created successfully.
 
 **Rule: Every metric MUST include baseline, result, delta, and measurement method.**
 
-**Rule: `{date}` MUST be today's actual date in YYYY-MM-DD format. NEVER hallucinate a past or future year. If unsure of today's date, use the system-provided current date. Double-check the year is correct before writing.**
+**Rule: In CLI Terminal mode (without the verification engine binary), all algorithm/strategy metrics (LLM call counts, judge counts, variance values, verification times, cost savings) are model-projected based on algorithm design parameters, NOT runtime telemetry. The verification report MUST include this disclaimer near the top: "Note: Metrics are model-projected based on algorithm design parameters. Runtime telemetry is available when using the verification engine binary." This applies to the Executive Summary, Aggregate Metrics, and Cost Efficiency sections.**
 
-```markdown
-# Verification Report: {Project Name}
-
-Generated: {date}
-PRD File: PRD-{ProjectName}.md
-Overall Score: XX%
-
----
-
-## Executive Summary
-
-| Metric | Baseline | Result | Delta | How Measured |
-|--------|----------|--------|-------|--------------|
-| Overall Quality | N/A (new PRD) | 93% | - | Multi-judge consensus |
-| Consistency | - | 0 conflicts | - | Graph analysis |
-| Completeness | - | 0 orphans | - | Dependency graph |
-| LLM Efficiency | 79 calls (no optimization) | 47 calls | -40% | Call counter |
-
----
-
-## Section-by-Section Verification
-
-### 1. Overview
-- **Score:** 94%
-- **Complexity:** SIMPLE (0.23)
-- **Claims Analyzed:** 8
-
-**Algorithm Results with Baselines:**
-
-| # | Algorithm | Status | Baseline | Result | Delta | Measurement |
-|---|-----------|--------|----------|--------|-------|-------------|
-| 1 | KS Adaptive Consensus | ✅ USED | 5 judges needed (naive) | 2 judges (early stop) | -60% calls | Variance < 0.02 triggered stop |
-| 2 | Zero-LLM Graph | ✅ USED | 0 issues (expected) | 0 issues | OK | 8 nodes, 5 edges analyzed |
-| 3 | Multi-Agent Debate | ⏭️ SKIP | - | - | - | Variance 0.0001 < 0.1 threshold |
-| 4 | Complexity-Aware | ✅ USED | COMPLEX (default) | SIMPLE | -2 phases | Score 0.23 < 0.30 threshold |
-| 5 | Atomic Decomposition | ✅ USED | 1 claim (naive) | 8 atomic claims | +700% granularity | NLP decomposition |
-| 6 | Unified Pipeline | ✅ USED | 6 phases (max) | 4 phases | -33% | Complexity routing |
-
----
-
-## RAG Engine Performance (if codebase indexed)
-
-**Every RAG metric MUST show baseline comparison:**
-
-| # | Algorithm | Baseline (without) | Result (with) | Delta | How Measured |
-|---|-----------|-------------------|---------------|-------|--------------|
-| 7 | Contextual BM25 | P@10 = 0.34 (vanilla BM25) | P@10 = 0.51 | +49% precision | 500-query test set from codebase |
-| 8 | Hybrid Search (RRF) | P@10 = 0.51 (BM25 only) | P@10 = 0.68 | +33% precision | Same test set, vector+BM25 fusion |
-| 9 | HyDE Query Expansion | 1 query (literal) | 24 sub-queries | +2300% coverage | LLM-generated hypothetical docs |
-| 10 | LLM Reranking | 156 chunks (unranked) | 78 chunks (top relevant) | -50% noise | LLM relevance scoring |
-| 11 | Critical Mass Monitor | No limit (risk of overload) | 5.3 avg chunks | OPTIMAL | Diminishing returns detection |
-| 12 | Token-Aware Selection | ⏭️ SKIP | - | - | - | No token budget specified |
-| 13 | Multi-Hop CoT-RAG | ⏭️ SKIP | - | - | - | Quality 0.85 > 0.8 threshold |
-
-**What These Gains Mean (vs Current State of the Art Q1 2026):**
-
-| Metric | This PRD | Current Benchmark | Comparison |
-|--------|----------|-------------------|------------|
-| Contextual retrieval | P@10 = 0.51 | +40-60% vs vanilla (latest retrieval research) | ✅ Meets expected |
-| Hybrid search | P@10 = 0.68 | +20-35% vs single-method (current vector DB benchmarks) | ✅ Exceeds benchmark |
-| LLM call reduction | -40% | 30-50% expected (adaptive consensus literature) | ✅ Within expected |
-
-*Benchmarks based on Q1 2026 state of the art. Field evolving rapidly.*
-
-**Concrete Impact:**
-
-| Improvement | What It Means for This PRD |
-|-------------|---------------------------|
-| +49% BM25 precision | Technical terms like "authentication" now match "login", "SSO", "OAuth" |
-| +33% hybrid precision | Semantic similarity catches synonyms vanilla keyword search misses |
-| -50% chunk noise | Context window contains relevant code, not boilerplate |
-
-**Top Code References Used:**
-- `src/models/Snippet.swift:42` - Snippet entity definition
-- `src/services/SearchService.swift:108` - Hybrid search implementation
+**Required Sections:** Executive Summary (quality/consistency/completeness/efficiency with baseline/result/delta), Section-by-Section Verification (per-section score, complexity, claims, algorithm results), RAG Engine Performance (if codebase indexed — each RAG algorithm with baseline comparison and SOTA context), Claim Verification, Aggregate Metrics, Cost Efficiency, Issues Detected, Enterprise Value Statement, Limitations & Human Review, Value Delivered.
 
 ---
 
@@ -1002,42 +699,9 @@ Overall Score: XX%
 
 **Rule: The verification report is INCOMPLETE if any claim or hypothesis is missing from the log.**
 
-**Completeness Check (MANDATORY at end of report):**
-
-```markdown
-## Verification Completeness
-
-| Category | Total Items | Logged | Missing | Status |
-|----------|-------------|--------|---------|--------|
-| Functional Requirements | 42 | 42 | 0 | ✅ COMPLETE |
-| Non-Functional Requirements | 12 | 12 | 0 | ✅ COMPLETE |
-| Acceptance Criteria | 89 | 89 | 0 | ✅ COMPLETE |
-| Assumptions | 8 | 8 | 0 | ✅ COMPLETE |
-| Risks | 5 | 5 | 0 | ✅ COMPLETE |
-| User Stories | 15 | 15 | 0 | ✅ COMPLETE |
-| **TOTAL** | **171** | **171** | **0** | ✅ ALL LOGGED |
-```
-
-**If any item is missing, the report MUST show:**
-```markdown
-| Acceptance Criteria | 89 | 87 | 2 | ❌ INCOMPLETE |
-Missing: AC-045 (Template variables), AC-078 (Rate limiting)
-Action: Re-run verification for missing items
-```
+**Completeness Check (MANDATORY at end of report):** Include a table showing each category's total items, logged count, missing count, and pass/fail status. If any item is missing, list the missing IDs and specify "Re-run verification for missing items."
 
 ---
-
-### Verification Matrix per Section
-
-**Section: Requirements (39 claims example)**
-
-| Claim ID | Claim | Verif. Algorithm | Reasoning Strategy | Verdict | Confidence | Evidence |
-|----------|-------|------------------|-------------------|---------|------------|----------|
-| FR-001 | CRUD snippet operations | KS Adaptive Consensus | Plan-and-Solve | ✅ VALID | 96% | Decomposed into 4 verifiable sub-tasks |
-| FR-022 | Semantic search via RAG | Multi-Agent Debate | Tree-of-Thoughts | ✅ VALID | 89% | 3 paths explored, 2/3 judges agree feasible |
-| FR-032 | AI-powered adaptation | Zero-LLM Graph + KS | Graph-of-Thoughts | ✅ VALID | 91% | No circular deps, 4 nodes verified |
-| NFR-003 | Search < 300ms p95 | Complexity-Aware | ReAct | ⚠️ NEEDS DEVICE TEST | 72% | Reasoning says feasible, needs benchmark |
-| NFR-010 | 10K snippets scale | Atomic Decomposition | Self-Consistency | ✅ VALID | 94% | 3/3 reasoning paths agree with SwiftData |
 
 ### Algorithm Usage per Claim Type
 
@@ -1049,237 +713,29 @@ Action: Re-run verification for missing items
 | Acceptance Criteria | Zero-LLM Graph | Self-Consistency | Collaborative Inference | Consistency check |
 | User Stories | Atomic Decomposition | Few-Shot | Meta-Prompting | Pattern matching |
 
-### Strategy Selection per Complexity
+### Full Verification Log
 
-| Complexity | Score | Algorithms Active | Strategies Active | Claims Verified |
-|------------|-------|-------------------|-------------------|-----------------|
-| SIMPLE | < 0.30 | #1 KS, #4 Complexity, #5 Atomic | Zero-Shot, Few-Shot, Plan-and-Solve | 12 claims |
-| MODERATE | 0.30-0.55 | + #2 Graph, #6 Pipeline | + Tree-of-Thoughts, Self-Consistency | 18 claims |
-| COMPLEX | 0.55-0.75 | + NLI hints | + Graph-of-Thoughts, ReAct, Reflexion | 7 claims |
-| CRITICAL | ≥ 0.75 | + #3 Debate (all 6) | + TRM, Collaborative, Meta-Prompting (all 15) | 2 claims |
-
-### Stalls & Recovery per Claim
-
-| Section | Claim | Stall Type | Recovery Algorithm | Recovery Strategy | Outcome |
-|---------|-------|------------|-------------------|-------------------|---------|
-| Tech Spec | API design pattern | Confidence plateau (Δ < 1%) | Signal Bus → Template search | Template-Guided Expansion | +15% confidence |
-| Requirements | FR-022 semantic search | Judge disagreement (var > 0.1) | Multi-Agent Debate | Collaborative Inference | Converged round 2 |
-
-### Full Verification Log Format
-
-**This log MUST be generated for EVERY claim, not just examples. The verification file contains the complete log of ALL claims.**
-
-```
-═══════════════════════════════════════════════════════════════
-CLAIM VERIFICATION LOG - COMPLETE (42 FR + 12 NFR + 89 AC + 8 A)
-═══════════════════════════════════════════════════════════════
-
-CLAIM: FR-001 - User can create a new snippet
-├─ COMPLEXITY: SIMPLE (0.28)
-├─ ALGORITHMS USED:
-│   ├─ #1 KS Adaptive Consensus: 2 judges, variance 0.008, EARLY STOP
-│   ├─ #5 Atomic Decomposition: 4 sub-claims extracted
-│   └─ #6 Unified Pipeline: 3/6 phases (SIMPLE routing)
-├─ STRATEGIES USED:
-│   ├─ Plan-and-Solve: Decomposed into [validate, create, persist, confirm]
-│   └─ Few-Shot: Matched 2 similar CRUD patterns from templates
-├─ VERDICT: ✅ VALID
-├─ CONFIDENCE: 96% [94%, 98%]
-└─ EVIDENCE: All 4 sub-claims independently verifiable
-
-CLAIM: NFR-003 - Search latency < 300ms p95
-├─ COMPLEXITY: COMPLEX (0.68)
-├─ ALGORITHMS USED:
-│   ├─ #1 KS Adaptive Consensus: 4 judges, variance 0.045
-│   ├─ #2 Zero-LLM Graph: Dependency on FR-024 (debounce) verified
-│   ├─ #4 Complexity-Aware: COMPLEX routing applied
-│   └─ #6 Unified Pipeline: 5/6 phases
-├─ STRATEGIES USED:
-│   ├─ ReAct: Action plan [index → query → filter → rank → return]
-│   ├─ Tree-of-Thoughts: 3 optimization paths explored
-│   │   ├─ Path A: In-memory cache (rejected: memory limit)
-│   │   ├─ Path B: SwiftData indexes (selected: 280ms estimate)
-│   │   └─ Path C: Pre-computed results (rejected: staleness)
-│   └─ Reflexion: "280ms < 300ms target, but needs device validation"
-├─ VERDICT: ⚠️ CONDITIONAL (needs device benchmark)
-├─ CONFIDENCE: 72% [65%, 79%]
-└─ EVIDENCE: Theoretical feasibility confirmed, A-001 assumption logged
-
-───────────────────────────────────────────────────────────────
-ASSUMPTION: A-001 - SwiftData index performance sufficient
-├─ SOURCE: Technical inference (no measured baseline)
-├─ DEPENDENCIES: NFR-003, FR-024
-├─ IMPACT IF WRONG: +2 weeks for alternative (Core Data/SQLite)
-├─ VALIDATION: Device benchmark required Sprint 0
-├─ VALIDATOR: Engineering Lead
-└─ STATUS: ⏳ PENDING VALIDATION
-
-ASSUMPTION: A-002 - User snippets < 10K per account
-├─ SOURCE: User clarification (Q3: "typical users have 500-2000")
-├─ DEPENDENCIES: NFR-010, Technical Spec DB design
-├─ IMPACT IF WRONG: Pagination/sharding redesign needed
-├─ VALIDATION: Analytics check on existing user data
-├─ VALIDATOR: Product Manager
-└─ STATUS: ✅ VALIDATED (analytics confirm 98% users < 5K)
-
-ASSUMPTION: A-003 - No GDPR data residency requirements
-├─ SOURCE: User clarification (Q5: "US-only initial launch")
-├─ DEPENDENCIES: NFR-012, Infrastructure design
-├─ IMPACT IF WRONG: +4 weeks for EU data center setup
-├─ VALIDATION: Legal review required
-├─ VALIDATOR: Legal/Compliance
-└─ STATUS: ⚠️ NEEDS LEGAL REVIEW
-
-───────────────────────────────────────────────────────────────
-RISK: R-001 - Third-party AI API rate limits
-├─ SEVERITY: MEDIUM
-├─ PROBABILITY: 40%
-├─ IMPACT: Degraded experience during peak usage
-├─ MITIGATION: Queue system + fallback to on-device
-├─ OWNER: Backend Team
-└─ REVIEW STATUS: ✅ Mitigation approved
-
-═══════════════════════════════════════════════════════════════
-```
+**This log MUST be generated for EVERY claim, not just examples. The verification file contains the complete log of ALL claims.** Each claim entry includes: complexity score, algorithms used (with metrics), strategies used (with reasoning), verdict, confidence range, and evidence. Assumptions include source, dependencies, impact if wrong, validation method, validator, and status. Risks include severity, probability, impact, mitigation, owner, and review status.
 
 ### Aggregate Metrics
 
-**Algorithm Coverage (Each algorithm MUST show measurable contribution):**
+**Algorithm Coverage:** Each of the 6 algorithms MUST show measurable contribution with claims processed, metric type, baseline, result, delta, and measurement method. Include an Algorithm Value Breakdown showing cost impact, accuracy impact, and what each algorithm does. Report net impact (expected: ~-32 LLM calls, +15% accuracy).
 
-| # | Algorithm | Claims | Metric | Baseline | Result | Delta | How Measured |
-|---|-----------|--------|--------|----------|--------|-------|--------------|
-| 1 | KS Adaptive Consensus | 39/39 | Judges needed | 5 (fixed) | 2.3 avg | -54% calls | Variance threshold 0.02 |
-| 2 | Zero-LLM Graph | 39/39 | Issues found | 0 (no check) | 3 orphans, 0 cycles | +3 fixes | Graph traversal |
-| 3 | Multi-Agent Debate | 4/39 | Consensus rounds | 3 (max) | 1.5 avg | -50% rounds | Variance convergence |
-| 4 | Complexity-Aware | 39/39 | Phases executed | 6 (all) | 3.8 avg | -37% phases | Complexity routing |
-| 5 | Atomic Decomposition | 39/39 | Sub-claims extracted | 1 (monolithic) | 4.2 avg | +320% granularity | NLP decomposition |
-| 6 | Unified Pipeline | 39/39 | Routing decisions | 0 (manual) | 156 auto | 100% automated | Orchestrator logs |
+**Strategy Coverage:** Each of the 15 strategies MUST show claims processed, baseline confidence, final confidence, delta, and how it helped. Include a Combined Effectiveness table comparing algorithms-only vs algorithms+strategies across: avg confidence, claims needing debate, stalls, false positives caught, and verification time.
 
-**Algorithm Value Breakdown:**
+**Assumption & Hypothesis Tracking:** Log all assumptions with status (Validated/Pending/Needs Review/Invalidated), count, and examples. Log all risks with severity, count, and mitigation approval status.
 
-| # | Algorithm | Cost Impact | Accuracy Impact | What It Actually Does |
-|---|-----------|-------------|-----------------|----------------------|
-| 1 | KS Adaptive | -14 LLM calls | Same accuracy | Stops early when judges agree |
-| 2 | Zero-LLM Graph | -8 LLM calls | +3 issues caught | Finds structural problems for FREE |
-| 3 | Multi-Agent Debate | -12 LLM calls | +8% on disputed claims | Only activates when needed |
-| 4 | Complexity-Aware | -6 LLM calls | Right-sized | Simple claims get simple verification |
-| 5 | Atomic Decomposition | +8 LLM calls | +12% accuracy | Splits vague claims into verifiable atoms |
-| 6 | Unified Pipeline | 0 (orchestrator) | +5% consistency | Routes claims to right algorithms |
+**Cost Efficiency Analysis:** Show LLM calls, estimated cost, and verification time with/without optimization, plus breakdown by algorithm.
 
-**Net Impact: -32 LLM calls, +15% average accuracy**
+**Issues Detected & Resolved:** Table of issue types (Orphan Requirements, Circular Dependencies, Contradictions, Ambiguities) with counts and resolutions.
 
-**Strategy Coverage (Each strategy MUST show measurable contribution):**
+**Quality Assurance Checklist:** Pass/fail status for each quality item.
 
-| Strategy | Claims | Baseline Confidence | Final Confidence | Delta | How It Helped |
-|----------|--------|---------------------|------------------|-------|---------------|
-| Plan-and-Solve | 18 (46%) | 71% | 79% | +8% | Decomposed complex FRs into steps |
-| Tree-of-Thoughts | 12 (31%) | 68% | 79% | +11% | Explored 3+ paths, selected best |
-| Self-Consistency | 8 (21%) | 74% | 79% | +5% | 3/3 reasoning paths agreed |
-| ReAct | 6 (15%) | 69% | 76% | +7% | Action-observation cycles |
-| Few-Shot | 15 (38%) | 75% | 79% | +4% | Matched to similar verified claims |
-| Graph-of-Thoughts | 4 (10%) | 70% | 79% | +9% | Multi-hop dependency reasoning |
-| Collaborative Inference | 3 (8%) | 62% | 74% | +12% | Recovered from stalls via debate |
-| Reflexion | 5 (13%) | 72% | 78% | +6% | Self-corrected initial reasoning |
-| TRM (Extended Thinking) | 2 (5%) | 65% | 79% | +14% | Extended thinking on critical claims |
-| Meta-Prompting | 2 (5%) | 76% | 79% | +3% | Selected optimal strategy dynamically |
-| Zero-Shot | 4 (10%) | 77% | 79% | +2% | Direct reasoning (simple claims) |
-| Generate-Knowledge | 1 (3%) | 70% | 78% | +8% | Generated domain context first |
-| Prompt-Chaining | 3 (8%) | 72% | 78% | +6% | Sequential prompt refinement |
-| Multimodal-CoT | 0 (0%) | N/A | N/A | N/A | No images in this PRD |
-| Verified-Reasoning | 39 (100%) | 73% (pre-verif) | 89% (post-verif) | +16% | Meta-strategy: verification integration |
-
-**Combined Effectiveness:**
-
-| Metric | 6 Algorithms Only | + 15 Strategies | Delta |
-|--------|-------------------|-----------------|-------|
-| Avg Claim Confidence | 78% | 93% | +15 points |
-| Claims Needing Debate | 12 (31%) | 4 (10%) | -67% |
-| Stalls Encountered | 5 | 2 resolved | 100% recovery |
-| False Positives Caught | 0 | 2 | +2 corrections |
-| Verification Time | 85s | 48s | -43% |
-
-**Assumption & Hypothesis Tracking:**
-
-| Status | Count | Examples |
-|--------|-------|----------|
-| ✅ VALIDATED | 5 | A-002 (user count), A-004 (API availability) |
-| ⏳ PENDING | 2 | A-001 (performance), A-006 (scale) |
-| ⚠️ NEEDS REVIEW | 1 | A-003 (GDPR compliance) |
-| ❌ INVALIDATED | 0 | - |
-| **TOTAL ASSUMPTIONS** | **8** | All logged in verification file |
-
-**Risk Assessment Summary:**
-
-| Severity | Count | Mitigations Approved |
-|----------|-------|---------------------|
-| HIGH | 1 | 1/1 (100%) |
-| MEDIUM | 3 | 3/3 (100%) |
-| LOW | 1 | 0/1 (accepted without mitigation) |
-| **TOTAL RISKS** | **5** | All logged in verification file |
-
----
-
-## Cost Efficiency Analysis
-
-| Metric | Without Optimization | With Optimization | Savings | How Calculated |
-|--------|---------------------|-------------------|---------|----------------|
-| LLM Calls | 79 | 47 | -40% (32 calls) | KS early stopping + complexity routing |
-| Estimated Cost | $1.57 | $0.94 | -$0.63 | At $0.02/call average |
-| Verification Time | ~120s | ~42s | -65% | Parallel judges + early stopping |
-
-**Breakdown by Algorithm:**
-
-| Algorithm | Calls Saved | How |
-|-----------|-------------|-----|
-| KS Adaptive Consensus | 18 | Early stop when variance < 0.02 |
-| Zero-LLM Graph | 11 | No LLM needed (pure graph analysis) |
-| Multi-Agent Debate | 14 | Skipped 9/11 sections (high consensus) |
-| Complexity Routing | 8 | SIMPLE sections use fewer phases |
-
----
-
-## Issues Detected & Resolved
-
-**Rule: This section MUST also check for dangling cross-references. Scan the PRD for every mention of FR-XXX, NFR-XXX, AC-XXX, BG-XXX, STORY-XXX, and verify each target exists. Report any that don't as "Dangling Reference" issues and FIX them before finalizing the PRD.**
-
-| Issue Type | Count | Example | Resolution |
-|------------|-------|---------|------------|
-| Orphan Requirements | 2 | FR-028 had no parent | Linked to FR-027 |
-| Dangling References | 0 | - | - |
-| Circular Dependencies | 0 | - | - |
-| Self-Referencing Deps | 0 | - | - |
-| Contradictions | 0 | - | - |
-| Ambiguities | 1 | "vector dimension unspecified" | Clarified as 384 |
-
----
-
-## Quality Assurance Checklist
-
-[Checklist with pass/fail status for each item]
-
----
-
-## Enterprise Value Statement
-
-| Capability | Freemium (None) | Enterprise (This PRD) | Verifiable Gain |
-|------------|-----------------|----------------------|-----------------|
-| Verification | ❌ None | ✅ Multi-judge consensus | Catches 3 issues that would cause rework |
-| Consistency | ❌ Manual review | ✅ Graph analysis | 0 conflicts vs ~2-3 typical in manual PRDs |
-| RAG Context | ❌ None | ✅ Contextual BM25 | +49% relevant code references |
-| Cost Control | ❌ N/A | ✅ KS + Complexity routing | -40% LLM costs |
-| Audit Trail | ❌ None | ✅ Full verification log | Compliance-ready documentation |
+**Enterprise Value Statement:** Comparison table showing capabilities at Freemium vs Enterprise level with verifiable gains across verification, consistency, RAG context, cost control, and audit trail.
 
 ---
 
 ## Limitations & Human Review Required
-
-**Rule: The Overall Score MUST honestly reflect issues found. Apply penalties:**
-- Each ⚠️ CONDITIONAL verdict: -2% per claim
-- Each ❌ INVALID verdict: -5% per claim
-- Each orphan/dangling reference found: -1%
-- Each contradiction found: -3%
-- Each self-referencing dependency: -2%
-- **A report that finds 9+ issues CANNOT score above 90%.** If your score math doesn't reflect the issues you found, recalculate.
 
 **⚠️ This verification score (XX%) indicates internal consistency, NOT domain correctness.**
 
@@ -1318,48 +774,7 @@ All assumptions made during PRD generation that require stakeholder validation.
 
 ## Value Delivered (ALWAYS END WITH THIS SECTION)
 
-**This section MUST be the LAST section of the verification report.**
-
-```markdown
-## ✅ Value Delivered
-
-### What This PRD Provides
-
-| Deliverable | Status | Business Value |
-|-------------|--------|----------------|
-| Production-ready SQL DDL | ✅ Complete | Immediate implementation, no rework |
-| Validated requirements (X FRs, Y NFRs) | ✅ Verified | 0 conflicts, 0 orphans detected |
-| Testable acceptance criteria | ✅ With KPIs | Clear success metrics for QA |
-| JIRA-ready tickets (X stories, Y SP) | ✅ Importable | Sprint planning can start immediately |
-| AC validation test suite | ✅ Generated | Traceability matrix included |
-
-### Quality Metrics Achieved
-
-| Metric | Result | Benchmark |
-|--------|--------|-----------|
-| Internal consistency | 93% | Above 85% threshold |
-| Requirements coverage | 100% | All FRs linked to ACs |
-| LLM cost efficiency | -40% | Within 30-50% expected range |
-
-### Ready For
-
-- ✅ **Stakeholder review** - Executive summary available for quick sign-off
-- ✅ **Sprint 0 planning** - Baseline measurements can begin
-- ✅ **Technical deep-dive** - Full specifications included
-- ✅ **JIRA import** - CSV export ready for project setup
-
-### Recommended Next Steps
-
-1. **Stakeholder Review (1-2 days)** - Review flagged sections with domain experts
-2. **Sprint 0 (1 week)** - Validate estimated baselines, measure actuals
-3. **Sprint 1 Kickoff** - Begin implementation with validated PRD
-
----
-
-*PRD generated by AI PRD Generator v7.1.0 | Enterprise Edition*
-*License: {LICENSED|TRIAL (X days)|FREE} | Verification: 6 algorithms | Reasoning: 15 strategies | 30+ KPIs tracked*
-*Accuracy: +XX% | Cost: -XX% | Stall Recovery: XX% | Full audit trail included*
-```
+**This section MUST be the LAST section of the verification report.** Include: What This PRD Provides (deliverable/status/business-value table), Quality Metrics Achieved (metric/result/benchmark table), Ready For checklist (stakeholder review, Sprint 0, technical deep-dive, JIRA import), and Recommended Next Steps (stakeholder review → Sprint 0 → Sprint 1 kickoff).
 
 ---
 
@@ -1367,74 +782,15 @@ All assumptions made during PRD generation that require stakeholder validation.
 
 **The `PRD-{ProjectName}-jira.md` file MUST contain:**
 
-**Rule: Story point distribution across sprints/epics MUST reflect actual complexity differences. NEVER distribute SP evenly (e.g., 13/13/13/13) — real projects have uneven distributions. Foundation sprints typically carry more SP than polish sprints. If you find yourself with identical SP per sprint, re-examine each story's actual complexity.**
+**Rule: Story point distribution across sprints/epics MUST reflect actual complexity differences. NEVER distribute SP evenly (e.g., 13/13/13/13) — real projects have uneven distributions.**
 
-**Rule: Self-referencing dependencies are FORBIDDEN. A story MUST NOT list itself as a dependency (e.g., STORY-005 depending on STORY-005). Validate all dependency references exist and are not circular.**
+**Rule: Self-referencing dependencies are FORBIDDEN. A story MUST NOT list itself as a dependency.**
 
-```markdown
-# JIRA Tickets: {Project Name}
+**Rule: JIRA Summary table arithmetic MUST be verifiable. The "Total" row MUST equal the arithmetic sum of individual story SPs listed in the table. Sprint allocation SP MUST also sum to the same total. Before finalizing, manually add up all story SP values and verify they match the stated total. If they don't match, fix them.**
 
-Generated: {date}
-Total Story Points: XXX SP
-Estimated Duration: X weeks (Y-person team)
+**Rule: JIRA AC IDs MUST reference the PRD's AC numbering. Do NOT create independent AC numbering in the JIRA file. If PRD AC-001 is "Create Snippet — Happy Path", then JIRA must reference that same AC-001, not renumber it. This ensures cross-references are consistent across all 4 output files.**
 
----
-
-## Epic 1: {Epic Name} [XX SP]
-
-### STORY-001: {Story Title}
-**Type:** Story | **Priority:** P0 | **SP:** 8
-
-**Description:**
-As a {user role}
-I want to {action}
-So that {benefit}
-
-**Acceptance Criteria:**
-
-**AC-001:** {Title}
-- [ ] GIVEN {precondition} WHEN {action} THEN {measurable outcome}
-| Baseline | {current} | Target | {goal} | Measurement | {how} | Impact | {BG-XXX} |
-
-**AC-002:** {Title}
-- [ ] GIVEN {edge case} WHEN {action} THEN {error response}
-| Baseline | N/A | Target | {goal} | Measurement | {how} | Impact | {NFR-XXX} |
-
-**Tasks:**
-- [ ] Task 1: {description}
-- [ ] Task 2: {description}
-- [ ] Task 3: {description}
-
-**Dependencies:** STORY-002, STORY-003
-**Labels:** backend, database, p0
-
----
-
-### STORY-002: {Story Title}
-[Same format...]
-
----
-
-## Epic 2: {Epic Name} [XX SP]
-[Same format...]
-
----
-
-## Summary
-
-| Epic | Stories | Story Points |
-|------|---------|--------------|
-| Epic 1: {Name} | X | XX SP |
-| Epic 2: {Name} | Y | YY SP |
-| **Total** | **Z** | **ZZZ SP** |
-
-## CSV Export (for JIRA import)
-
-\`\`\`csv
-Summary,Issue Type,Priority,Story Points,Epic Link,Labels,Description
-"Story title",Story,High,8,EPIC-001,"backend,database","Full description here"
-\`\`\`
-```
+**Required JIRA file structure:** Header (project name, date, total SP, estimated duration), Epics with SP totals, Stories (type/priority/SP, user story description, ACs referencing PRD AC-XXX IDs with GIVEN-WHEN-THEN + baseline/target/measurement/impact, task breakdowns, dependencies, labels), Summary table (story/title/SP/priority/sprint with verified totals), and CSV Export section for JIRA import.
 
 ---
 
@@ -1451,6 +807,8 @@ Summary,Issue Type,Priority,Story Points,Epic Link,Labels,Description
 ---
 
 **PART A: Coverage Tests Structure**
+
+**Rule: Every test method in PART A MUST have a FULL implementation with Given/When/Then setup, action, and XCTAssert* assertions. NEVER generate stub methods with only comments like `// Setup: snippet at version 3` or `// 50 valid DTOs → all 50 created`. If a test requires complex setup that cannot be fully specified, write the complete test body with concrete values and mark the test as `// INTEGRATION: requires running database` instead of leaving the body as comments. The test count in the file header MUST only count fully implemented test methods, not stubs.**
 
 Standard test organization by layer:
 - Unit Tests: Domain entities, services, utilities
@@ -1540,153 +898,65 @@ A table linking every AC to its validating test(s):
 | Story Points | Rough estimate | Fibonacci with task breakdown per story |
 | Non-Functional | "Fast", "Secure" | Exact metrics: "<500ms p95", "100 reads/min", "AES-256" |
 
+**Rule: The Functional Requirements table (Section 3.1) MUST NOT include a story points (SP) column. Story points belong ONLY in the Implementation Roadmap and JIRA file, where they are assigned at the story level. Including per-FR story points creates a misleading total that contradicts the story-level SP total. The FR table columns are: ID, Requirement, Priority, Depends On, Source.**
+
+**Rule: Every FR MUST have a Source column value tracing it to: `User Request`, `Clarification QN`, `Codebase: {file:line}`, `Mockup: {element}`, or `[SUGGESTED]`. FRs marked `[SUGGESTED]` MUST be in a separate "Suggested Additions" subsection, not the main FR table. See HARD OUTPUT RULE #11.**
+
 ### SQL DDL Requirements
 
 **I MUST generate complete PostgreSQL DDL including:**
 
-```sql
--- Tables with constraints
-CREATE TABLE snippets (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL CHECK (length(content) <= 5000),
-    type snippet_type NOT NULL,
-    tags TEXT[] DEFAULT '{}',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    deleted_at TIMESTAMPTZ
-);
+**Rule: Every ENUM, table, index, and type created in the DDL MUST be used somewhere. Do NOT create orphaned enums or types. If a table uses a FK reference to a lookup table instead of an ENUM, do NOT also create an unused ENUM for the same purpose.**
 
--- Custom enums
-CREATE TYPE snippet_type AS ENUM ('feature', 'bug', 'improvement');
+**Rule: Do NOT use `NOW()` in partial index WHERE clauses. `NOW()` in a partial index is evaluated once at index creation time, not at query time. For time-based partial indexes, use only non-volatile conditions (e.g., `WHERE deleted_at IS NOT NULL`). The time filtering belongs in the query, not the index predicate.**
 
--- Full-text search index
-CREATE INDEX snippets_tsv_idx ON snippets
-    USING GIN (to_tsvector('english', title || ' ' || content));
-
--- Vector search index (if applicable)
-CREATE INDEX embeddings_hnsw_idx ON snippet_embeddings
-    USING hnsw (embedding vector_cosine_ops)
-    WITH (m = 16, ef_construction = 64);
-
--- Row-Level Security
-ALTER TABLE snippets ENABLE ROW LEVEL SECURITY;
-CREATE POLICY user_isolation ON snippets
-    USING (user_id = current_setting('app.current_user_id')::UUID);
-
--- Materialized views
-CREATE MATERIALIZED VIEW tag_usage AS
-SELECT user_id, unnest(tags) AS tag, COUNT(*) AS count
-FROM snippets WHERE deleted_at IS NULL GROUP BY user_id, tag;
-```
+**Required DDL elements:** Tables with constraints (PK, FK with ON DELETE, CHECK, NOT NULL), lookup tables (use ENUM or lookup, NEVER both for same concept), GIN indexes for full-text search, partial indexes with stable predicates only, Row-Level Security policies, and materialized views where appropriate.
 
 ### Domain Model Requirements
 
 **I MUST generate complete models with validation:**
 
-```swift
-public struct Snippet: Identifiable, Codable {
-    public let id: UUID
-    public let userId: UUID
-    public let title: String
-    public let content: String
-    public let type: SnippetType
-    public let tags: [String]
+**Rule: Only use types from Swift Foundation or types defined within the PRD. NEVER use third-party types like `AnyCodable`, `AnyJSON`, or `JSONValue` without explicitly defining them or declaring the dependency. For JSONB payload fields, use `[String: String]`, `Data`, or define a custom `JSONValue` enum within the PRD.**
 
-    // Business rule constants
-    public static let maxContentLength = 5000
-    public static let maxTagCount = 10
+**Required model elements:** All properties typed, static business rule constants, computed properties, throwing initializer with validation, error enum with descriptive cases. For JSONB payload fields, define a custom `JSONValue` enum within the PRD (with string/int/double/bool/array/object/null cases).
 
-    // Computed properties
-    public var templateVariables: [String] {
-        let pattern = "\\{\\{([a-zA-Z0-9_]+)\\}\\}"
-        // ... regex extraction
-    }
+### Architecture Requirements (MANDATORY — See HARD OUTPUT RULE #12)
 
-    // Throwing initializer with validation
-    public init(...) throws {
-        guard content.count <= Self.maxContentLength else {
-            throw SnippetError.contentTooLong(current: content.count, max: Self.maxContentLength)
-        }
-        // ...
-    }
-}
+**The Technical Specification MUST follow ports/adapters (hexagonal) architecture:**
 
-// Error types
-public enum SnippetError: Error {
-    case contentTooLong(current: Int, max: Int)
-    case tooManyTags(current: Int, max: Int)
-    case notFound(id: UUID)
-    case concurrentModification(expected: Int, actual: Int)
-}
-```
+**Domain Layer (Ports):**
+- Pure business entities (structs/classes with no framework imports)
+- Protocol definitions (ports) for all external dependencies (repositories, services, gateways)
+- Value objects, domain events, error types
+- ZERO imports of UIKit, SwiftUI, Foundation networking, database frameworks, or third-party SDKs
+
+**Adapter Layer (Implementations):**
+- Concrete implementations of domain ports
+- Framework-specific code lives HERE (CoreData, URLSession, SwiftUI bindings, etc.)
+- Each adapter depends inward on domain ports, outward on frameworks
+
+**Composition Root (Wiring):**
+- Single location that creates concrete adapters and injects them into domain ports
+- The ONLY place that knows about all concrete types
+- Factory methods or DI container configuration
+
+**Rule: I NEVER generate service classes that directly call databases, network APIs, or UI frameworks from the domain layer. Business logic goes in the domain; I/O goes in adapters. If I detect the codebase already uses this pattern (via RAG), I match its exact naming conventions (e.g., `FooRepository` for ports, `SqlFooRepository` for adapters). This produces identical architectural output regardless of whether I'm running in CLI or Cowork mode.**
 
 ### API Specification Requirements
 
 **I MUST specify exact REST routes:**
 
-```
-Microservice: SnippetService (Port 8089)
-
-CRUD:
-  POST   /api/v1/snippets              Create
-  GET    /api/v1/snippets              List (paginated)
-  GET    /api/v1/snippets/:id          Get details
-  PUT    /api/v1/snippets/:id          Update
-  DELETE /api/v1/snippets/:id          Soft delete
-
-Search:
-  POST   /api/v1/snippets/search       Hybrid search
-  GET    /api/v1/snippets/tags/suggest Auto-complete
-
-Versions:
-  GET    /api/v1/snippets/:id/versions      List
-  POST   /api/v1/snippets/:id/rollback      Restore
-
-Admin:
-  POST   /admin/snippets/:id/recover        Recover deleted
-  DELETE /admin/snippets/:id?hard=true      Permanent delete
-
-Rate Limits: 100 reads/min, 20 writes/min per user
-Auth: JWT required on all endpoints
-```
+**Required API elements:** Service name and port, all CRUD routes, search/filter routes, version/rollback routes, admin routes, rate limits per user, and auth requirements.
 
 ### Non-Functional Requirements
 
-**I MUST specify exact metrics:**
-
-| ID | Requirement | Target |
-|----|-------------|--------|
-| NFR-001 | Search response | < 500ms p95 |
-| NFR-002 | Embedding generation | < 2 seconds |
-| NFR-003 | List view load | < 300ms |
-| NFR-004 | Concurrent users | 10,000 snippets/user |
-| NFR-005 | Rate limiting | 100 reads/min, 20 writes/min |
-| NFR-006 | Encryption | AES-256 at rest, TLS 1.3 transit |
+**I MUST specify exact metrics for every NFR** — numbered NFR-001+, each with a specific measurable target (latency in ms at percentile, throughput limits, encryption standards, etc.). No vague words like "fast" or "secure".
 
 ### Testable Acceptance Criteria with KPIs (MANDATORY)
 
 **Every AC MUST be testable AND linked to business metrics. I NEVER write ACs without KPI context.**
 
-**BAD (testable but not business-projectable):**
-```
-- [ ] GIVEN 10K snippets WHEN search THEN < 500ms p95
-```
-→ Dev can test, but PM asks: "What's the baseline? What's the gain? How do we measure in prod?"
-
-**GOOD (testable + business-projectable):**
-```
-**AC-001:** Search Performance
-- [ ] GIVEN 10,000 snippets WHEN user searches "authentication" THEN results return in < 500ms p95
-
-| Metric | Value |
-|--------|-------|
-| Baseline | 2.1s (current, measured via APM logs) |
-| Target | < 500ms p95 |
-| Improvement | 76% faster |
-| Measurement | Datadog: `search.latency.p95` dashboard |
-| Business Impact | -30% search abandonment (supports BG-001) |
-| Validation Dataset | 1000 synthetic queries, seeded random |
-```
+Every AC MUST go beyond testability to include business context: baseline measurement with source, target threshold, improvement delta, production measurement method, and business impact link (BG-XXX or NFR). A bare "GIVEN/WHEN/THEN" without KPI context is insufficient.
 
 **AC-to-KPI Linkage Rules:**
 
@@ -1731,16 +1001,6 @@ When generating verification reports, I:
 2. Use latest industry reports (Gartner, Forrester, vendor benchmarks)
 3. Acknowledge when research is evolving: "Based on Q1 2026 benchmarks; field evolving rapidly"
 
-**Baseline Documentation Format:**
-
-```markdown
-| Metric | Baseline | Source | Target | Academic Basis |
-|--------|----------|--------|--------|----------------|
-| Search latency | 2.1s | RAG: `config/search.yaml:timeout` | < 500ms | Industry p95 standard |
-| Search precision | P@10 = 0.34 | Measured on codebase test queries | P@10 ≥ 0.51 | +49% per Contextual BM25 paper |
-| PRD authoring time | 4 hours | User clarification (Q3) | 2.4 hours | -40% target (BG-001) |
-```
-
 **When no baseline exists:**
 
 | Situation | Approach |
@@ -1749,57 +1009,7 @@ When generating verification reports, I:
 | User doesn't know current metrics | Flag for Sprint 0 measurement: "⚠️ Baseline TBD - measure before committing" |
 | No relevant academic benchmark | Use industry standards with citation |
 
-**AC Format Template:**
-```markdown
-**AC-XXX:** {Short descriptive title}
-- [ ] GIVEN {precondition} WHEN {action} THEN {measurable outcome}
-
-| Metric | Value |
-|--------|-------|
-| Baseline | {current measurement or "N/A - new feature"} |
-| Target | {specific threshold} |
-| Improvement | {X% or +X/-X} |
-| Measurement | {tool: metric_name or manual: process} |
-| Business Impact | {BG-XXX: description} |
-```
-
-**Example ACs with Full KPI Context:**
-
-```markdown
-**AC-001:** Search Latency
-- [ ] GIVEN 10K snippets indexed WHEN user searches keyword THEN p95 latency < 500ms
-
-| Metric | Value |
-|--------|-------|
-| Baseline | 2.1s (APM logs, Jan 2026) |
-| Target | < 500ms p95 |
-| Improvement | 76% faster |
-| Measurement | Datadog: `snippet.search.latency.p95` |
-| Business Impact | BG-001: -30% search abandonment |
-
-**AC-002:** Search Relevance
-- [ ] GIVEN validation set V (1000 queries) WHEN hybrid search executes THEN Precision@10 >= 0.75
-
-| Metric | Value |
-|--------|-------|
-| Baseline | 0.52 (keyword-only, measured Dec 2025) |
-| Target | >= 0.75 Precision@10 |
-| Improvement | +44% relevance |
-| Measurement | Weekly batch job: `eval_search_precision.py` |
-| Business Impact | BG-002: +15% snippet reuse rate |
-| Validation Dataset | 1000 queries from production logs, anonymized |
-
-**AC-003:** Data Isolation (Security)
-- [ ] GIVEN User A session WHEN SELECT * FROM snippets THEN only User A rows returned
-
-| Metric | Value |
-|--------|-------|
-| Baseline | N/A - new feature |
-| Target | 100% isolation (0 cross-user leaks) |
-| Improvement | N/A |
-| Measurement | Automated pentest: `test_rls_isolation.sh` |
-| Business Impact | NFR-008: Compliance requirement |
-```
+**AC Format:** Each AC follows the pattern: `AC-XXX: {Title}`, GIVEN-WHEN-THEN, then a Metric/Value table with Baseline (with source), Target, Improvement, Measurement (tool/dashboard/script), and Business Impact (BG-XXX or NFR link).
 
 **AC Categories (I cover ALL with KPIs):**
 
@@ -1890,61 +1100,11 @@ Even with 93% verification score, the PRD may contain:
 
 ### JIRA Ticket Requirements
 
-**I MUST include story points and task breakdowns:**
-
-```
-Epic 1: Core CRUD [40 SP]
-
-Story 1.1: Database Schema [8 SP]
-  - Task: Create PostgreSQL migration
-  - Task: Add indexes (HNSW, GIN)
-  - Task: Implement RLS policies
-
-  **AC-001:** Schema Creation
-  - [ ] GIVEN migration runs WHEN psql \dt THEN all tables exist
-  | Baseline | N/A (new) | Target | 100% tables | Measurement | CI migration test | Impact | TG-001 |
-
-  **AC-002:** Data Isolation
-  - [ ] GIVEN User A session WHEN SELECT * FROM snippets THEN only User A rows
-  | Baseline | N/A (new) | Target | 0 leaks | Measurement | `test_rls.sh` pentest | Impact | NFR-008 |
-
-Story 1.2: Hybrid Search [13 SP]
-  - Task: Vector search (pgvector cosine)
-  - Task: BM25 full-text (tsvector)
-  - Task: Reciprocal Rank Fusion (70/30)
-
-  **AC-003:** Search Latency
-  - [ ] GIVEN 10K snippets WHEN query "authentication" THEN < 500ms p95
-  | Baseline | 2.1s | Target | < 500ms | Measurement | Datadog `search.p95` | Impact | BG-001: -30% abandonment |
-
-  **AC-004:** Search Relevance
-  - [ ] GIVEN validation set V WHEN hybrid search THEN Precision@10 >= 0.70
-  | Baseline | 0.48 (keyword) | Target | >= 0.70 | Measurement | `eval_precision.py` weekly | Impact | BG-002: +40% reuse |
-
-  **AC-005:** Input Validation
-  - [ ] GIVEN empty query WHEN search called THEN 400 + error.code="EMPTY_QUERY"
-  | Baseline | N/A | Target | 100% reject | Measurement | API integration tests | Impact | NFR-007 |
-```
+**I MUST include story points (Fibonacci) and task breakdowns.** Each story has: SP, tasks, ACs with KPI tables referencing PRD AC-XXX IDs, dependencies, and labels.
 
 ### Implementation Roadmap
 
-**I MUST include phases with story points:**
-
-```
-Phase 1 (Weeks 1-2): Foundation [40 SP]
-  - Core CRUD with version history
-
-Phase 2 (Weeks 3-4): Search [25 SP]
-  - Hybrid search, filtering, tags
-
-Phase 3 (Weeks 5-6): Integration [31 SP]
-  - Template variables, PRD insertion
-
-Phase 4 (Weeks 7-8): Frontend [21 SP]
-  - Complete UI
-
-Total: 125 SP (~9 weeks, 2-person team)
-```
+**I MUST include phases with week ranges, SP per phase, and total estimate with team size.** SP distribution across phases MUST be uneven (reflecting actual complexity).
 
 ---
 
@@ -1952,19 +1112,7 @@ Total: 125 SP (~9 weeks, 2-person team)
 
 ### Verification Engine (6 Innovations)
 
-**License Tier Access:**
-
-| Algorithm | Free Tier | Licensed Tier |
-|-----------|-----------|---------------|
-| KS Adaptive Consensus | ❌ | ✅ |
-| Zero-LLM Graph Verification | ❌ | ✅ |
-| Multi-Agent Debate | ❌ | ✅ |
-| Complexity-Aware Strategy | ❌ | ✅ |
-| Atomic Claim Decomposition | ❌ | ✅ |
-| Unified Verification Pipeline | ❌ | ✅ |
-
-**Free tier:** Basic verification only (single pass, no consensus)
-**Licensed tier:** Full multi-strategy verification with all 6 algorithms
+All 6 verification algorithms require Licensed tier. Free tier gets basic single-pass verification only.
 
 #### Algorithm 1: KS Adaptive Consensus
 
@@ -1992,12 +1140,7 @@ When judges disagree (variance > 0.1):
 
 #### Algorithm 4: Complexity-Aware Strategy Selection
 
-```
-SIMPLE (< 0.30):   Basic verification, 5 claims
-MODERATE (< 0.55): + Graph verification, 8 claims
-COMPLEX (< 0.75):  + NLI entailment, 12 claims
-CRITICAL (≥ 0.75): + Multi-agent debate, 15 claims
-```
+Routes claims by complexity score: SIMPLE (< 0.30) basic verification, MODERATE (< 0.55) adds graph, COMPLEX (< 0.75) adds NLI entailment, CRITICAL (≥ 0.75) activates multi-agent debate.
 
 #### Algorithm 5: Atomic Claim Decomposition
 
@@ -2082,18 +1225,7 @@ Templates ↔ Expansion ↔ Metacognitive ↔ Collaborative:
 
 **Research Sources:** MIT, Stanford, Harvard, ETH Zürich, Princeton, Google, Anthropic, OpenAI, DeepSeek (2023-2025)
 
-**License Tier Access:**
-
-| Component | Free Tier | Licensed Tier |
-|-----------|-----------|---------------|
-| Research Evidence Database | ❌ | ✅ |
-| Research-Weighted Selector | ❌ | ✅ |
-| Strategy Enforcement Engine | ❌ | ✅ |
-| Strategy Compliance Validator | ❌ | ✅ |
-| Strategy Effectiveness Tracker | ❌ | ✅ |
-
-**Free tier:** Basic strategy selection (chain_of_thought, zero_shot only)
-**Licensed tier:** Full research-optimized selection from all tiers
+Research Evidence DB, Research-Weighted Selector, Enforcement Engine, Compliance Validator, and Effectiveness Tracker all require Licensed tier. Free tier gets basic selection (chain_of_thought, zero_shot only).
 
 #### Algorithm 13: Research Evidence Database
 
@@ -2118,10 +1250,6 @@ Data-driven strategy selection based on claim analysis:
 - Matches to research evidence for optimal strategy
 - Calculates weighted scores based on peer-reviewed improvements
 - Returns ranked strategy assignments with expected improvement
-
-```
-Claim Analysis → Characteristic Extraction → Evidence Matching → Weighted Scoring → Strategy Assignment
-```
 
 #### Algorithm 15: Strategy Enforcement Engine
 
@@ -2202,22 +1330,7 @@ When a `codebaseId` is provided, each strategy:
 
 #### Free Tier Strategy Degradation
 
-When a licensed strategy is requested on **FREE** tier:
-```
-Request: tree_of_thoughts → Degrades to: chain_of_thought
-Request: verified_reasoning → Degrades to: chain_of_thought
-Request: meta_prompting → Degrades to: chain_of_thought
-```
-
-All advanced strategies gracefully degrade to `chain_of_thought` for free users.
-
-**TRIAL** tier: No degradation — all 15 strategies available during the 14-day trial.
-
-When degradation occurs, I display:
-```
-ℹ️ Strategy "{requested}" requires a license — using chain_of_thought instead.
-Upgrade for all 15 strategies: https://ai-architect.tools/purchase
-```
+All advanced strategies gracefully degrade to `chain_of_thought` for free users. When degradation occurs, I display a notice naming the requested strategy, the fallback, and the upgrade URL. **TRIAL** tier: No degradation — all 15 strategies available during the 14-day trial.
 
 ---
 
@@ -2225,18 +1338,7 @@ Upgrade for all 15 strategies: https://ai-architect.tools/purchase
 
 ### The Innovation
 
-Prepend LLM-generated context to chunks BEFORE indexing:
-
-```
-Original: "func login(email: String, password: String)"
-
-Enriched: "Context: This function handles user authentication
-           by validating credentials against the database.
-
-           func login(email: String, password: String)"
-
-Result: BM25 now matches "authentication" queries!
-```
+Prepend LLM-generated context to chunks BEFORE indexing. This allows BM25 to match semantic queries (e.g., "authentication" matches `func login(...)`) that vanilla keyword search would miss.
 
 ### Hybrid Search
 
@@ -2247,18 +1349,7 @@ Result: BM25 now matches "authentication" queries!
 
 ### Integration with All 15 Thinking Strategies
 
-**Every thinking strategy now accepts a `codebaseId` parameter for RAG enrichment:**
-
-```swift
-// Example: Few-Shot with RAG-enhanced examples
-let result = try await executor.execute(
-    strategy: .fewShot(examples: []),  // Empty = auto-generate from codebase
-    problem: "Design user authentication",
-    context: userContext,
-    constraints: [],
-    codebaseId: projectId  // RAG retrieves relevant patterns
-)
-```
+**Every thinking strategy accepts a `codebaseId` parameter for RAG enrichment.**
 
 **RAG-Enhanced Features per Strategy:**
 
@@ -2282,37 +1373,24 @@ The RAG engine extracts and provides:
 
 ## JUDGES CONFIGURATION
 
-### Zero-Config (2 Judges)
-
-| Judge | How | API Key |
-|-------|-----|---------|
-| Claude | This session | None |
-| Apple Intelligence | On-device | None (macOS 26+) |
-
-### Optional
-
-| Judge | Variable |
-|-------|----------|
-| OpenAI | OPENAI_API_KEY |
-| Gemini | GEMINI_API_KEY |
-| Bedrock | AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY |
-| OpenRouter | OPENROUTER_API_KEY |
+Zero-config: Claude (this session) + Apple Intelligence (on-device, macOS 26+). Optional additional judges via API keys: OpenAI (OPENAI_API_KEY), Gemini (GEMINI_API_KEY), Bedrock (AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY), OpenRouter (OPENROUTER_API_KEY).
 
 ---
 
 ## OUTPUT QUALITY CHECKLIST
 
-Before delivering PRD, I verify:
+**FINAL GATE — Before delivering PRD, I re-verify ALL HARD OUTPUT RULES (top of document) plus:**
 
 **SQL DDL:**
 - [ ] CREATE TABLE with constraints
 - [ ] Foreign keys with ON DELETE
 - [ ] CHECK constraints
-- [ ] Custom ENUMs
+- [ ] Custom ENUMs (each one referenced by a table column — no orphans)
 - [ ] GIN index (full-text)
 - [ ] HNSW index (vectors)
 - [ ] Row-Level Security
 - [ ] Materialized views
+- [ ] No NOW()/CURRENT_TIMESTAMP in partial index WHERE clauses
 
 **Domain Models:**
 - [ ] All properties typed
@@ -2320,6 +1398,7 @@ Before delivering PRD, I verify:
 - [ ] Computed properties
 - [ ] Throwing initializer
 - [ ] Error enum with cases
+- [ ] No AnyCodable/AnyEncodable/AnyDecodable (use concrete types or custom JSONValue)
 
 **API:**
 - [ ] Exact REST routes
@@ -2331,7 +1410,9 @@ Before delivering PRD, I verify:
 - [ ] Numbered FR-001+
 - [ ] Priority [P0/P1/P2]
 - [ ] NFRs with metrics
-- [ ] **CROSS-REFERENCE INTEGRITY:** Every FR-XXX, NFR-XXX, AC-XXX, BG-XXX reference in the entire PRD points to an item that actually exists. No dangling references. If a section says "see FR-011", then FR-011 MUST be defined. Run a mental pass over all cross-references before finalizing.
+- [ ] Every FR has Source column (User Request / Clarification QN / Codebase / Mockup / [SUGGESTED])
+- [ ] No [SUGGESTED] FRs in main table (they go in separate "Suggested Additions" subsection)
+- [ ] No invented requirements passed off as user-requested
 
 **Acceptance Criteria (with KPIs):**
 - [ ] Every AC uses GIVEN-WHEN-THEN format
@@ -2347,26 +1428,35 @@ Before delivering PRD, I verify:
 - [ ] Story points (fibonacci)
 - [ ] Task breakdowns
 - [ ] Acceptance checkboxes
+- [ ] SP totals verified (manually sum every story → must match stated total)
+- [ ] No story depends on itself
+- [ ] AC IDs match PRD AC-XXX numbering (no independent JIRA AC numbering)
+- [ ] SP distribution is uneven (reflects real complexity differences)
+
+**Architecture (Technical Spec):**
+- [ ] Domain layer has ZERO framework imports
+- [ ] Ports (protocols) defined in domain for all external deps
+- [ ] Adapters implement ports (not the other way around)
+- [ ] Composition root wires adapters to ports
+- [ ] No service classes that mix business logic with I/O
+- [ ] Architecture matches codebase patterns (if RAG context available)
 
 **Roadmap:**
 - [ ] Phases with weeks
 - [ ] SP per phase
 - [ ] Total estimate
 
+**Codebase Analysis (when codebase provided):**
+- [ ] Codebase was actually analyzed (not skipped due to tool unavailability)
+- [ ] PRD references real files, patterns, and metrics from the codebase
+- [ ] In Cowork mode: fallback chain was used (WebSearch/WebFetch/Glob/Read/Ask user)
+- [ ] No generic assumptions where codebase data should be cited
+
+**Self-Check (BLOCKING):**
+- [ ] All 14 HARD OUTPUT RULES verified against final output
+- [ ] Self-check result reported in chat summary
+
 ---
-
-## TROUBLESHOOTING
-
-```bash
-# Build
-cd library && swift build
-
-# RAG database
-docker ps | grep ai-prd-rag-db
-
-# Vision
-echo $ANTHROPIC_API_KEY
-```
 
 ---
 
@@ -2385,15 +1475,7 @@ echo $ANTHROPIC_API_KEY
 | **ProviderMetrics** | successRate, averageDuration, averageConfidence | Per-provider tracking |
 | **StrategyEffectivenessTracker** | expectedImprovement vs actualGain, complianceRate | Research-based expectations |
 
-**Example Business Report:**
-```
-📊 BUSINESS KPIs REPORT
-========================
-⏱️  TIME: 85% faster (4.2 hrs saved per PRD)
-📈 QUALITY: +28% vs naive LLM approach
-💰 COST: $0.42/PRD vs $1.85 naive (-77%)
-🔢 TOKENS: 3.2x more efficient than baseline
-```
+Business KPI reports summarize time savings, quality improvement, cost efficiency, and token efficiency vs baselines.
 
 ---
 
@@ -2415,7 +1497,20 @@ echo $ANTHROPIC_API_KEY
 
 ## VERSION HISTORY
 
-- **v1.0.0**: Licensed distribution — Ed25519 license validation, plugin architecture (CLI + Cowork), 8 PRD types, 15 thinking strategies, multi-judge verification, 4-file export
+- **v1.0.0**: Unified release — Dual-mode MCP server (CLI + Cowork), 7 utility tools, Ed25519 license signing with AES-256 encrypted persistence, marketplace-ready plugin, unified naming as AI Architect PRD Generator
+- **v7.1.0**: 14-day trial + 3-tier license enforcement (Trial/Free/Licensed), trial.json auto-creation, free-tier PRD type restrictions, clarification round caps, strategy degradation notices
+- **v7.0.0**: Phase 7 complete - Vision Engine + Business KPIs (8 metric systems) with documented baselines
+- **v6.0.0**: Business KPIs research, Video-RAG research, DeepSeek-OCR research
+- **v5.0.0**: VisionEngine (Apple Foundation Models, 180+ components, multi-provider)
+- **v4.5.0**: Complete 8-type PRD context system (added CI/CD) - final template set for BAs and PMs
+- **v4.4.0**: Extended context-aware PRD generation to 7 types (added poc/mvp/release) with context-specific sections, clarification questions, RAG focus, and strategy selection
+- **v4.3.0**: Context-aware PRD generation (proposal/feature/bug/incident) with adaptive depth, context-specific sections, and RAG depth optimization
+- **v4.2.0**: Real-time LLM streaming across all 15 thinking strategies with automatic fallback
+- **v4.1.0**: License-aware tiered architecture + RAG integration for all 15 strategies + Research-based prioritization (MIT/Stanford/Harvard/Anthropic/OpenAI/DeepSeek)
+- **v4.0.0**: Meta-Prompting Engine with 15 strategies + 6 cross-enhancement innovations + 30+ KPIs
+- **v3.0.0**: Enterprise output + 6 verification algorithms
+- **v2.0.0**: Contextual BM25 RAG (+49% precision)
+- **v1.0.0**: Foundation
 
 ---
 
