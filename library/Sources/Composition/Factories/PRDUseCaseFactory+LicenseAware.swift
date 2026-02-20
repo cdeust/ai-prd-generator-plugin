@@ -13,8 +13,8 @@ extension PRDUseCaseFactory {
     func createLicenseAwareThinkingService(
         aiProvider: AIProviderPort,
         ragFactory: RAGFactory
-    ) -> LicenseAwareThinkingService {
-        let ragResult = ragFactory.createRAGEngineWithFallback(aiProvider: aiProvider)
+    ) async -> LicenseAwareThinkingService {
+        let ragResult = await ragFactory.createRAGEngineWithFallback(aiProvider: aiProvider)
         let strategyFactory = StrategyFactory(configuration: configuration)
         let strategyResult = strategyFactory.createStrategyEngineAdapter()
 

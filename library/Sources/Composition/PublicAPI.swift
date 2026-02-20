@@ -11,5 +11,5 @@ import Foundation
 // - Presenters cannot access internal Application/Domain implementation
 // - Business Layer is protected from presenter corruption
 
-@_exported import AIPRDSharedUtilities
-@_exported import Application
+import AIPRDSharedUtilities
+import Application
