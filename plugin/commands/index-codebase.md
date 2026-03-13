@@ -9,8 +9,6 @@ First, call the `check_health` MCP tool. **Note the `environment` field** — it
 - `environment: "cli"` → Local directory access. Use `$ARGUMENTS` as the target path.
 - `environment: "cowork"` → **No local filesystem access to user's code.** If `$ARGUMENTS` is a GitHub URL, use WebFetch to retrieve the repo structure and key files. Otherwise, ask the user to paste relevant code or provide a GitHub URL.
 
-Call the `validate_license` MCP tool to verify the current tier supports RAG features. If the tier is `free`, inform the user that RAG indexing is limited to 1 hop depth.
-
 ## CLI Mode
 
 Use `$ARGUMENTS` as the target directory path. If not provided, ask the user for the codebase path to index.
@@ -44,6 +42,6 @@ Source:     [directory path | GitHub URL | user-provided]
 Files:      [count] source files analyzed
 Patterns:   [list of detected patterns]
 Entities:   [count] extracted
-RAG Depth:  [tier-dependent hop count]
+RAG Depth:  [context-aware hop count]
 Mode:       [cli | cowork]
 ```

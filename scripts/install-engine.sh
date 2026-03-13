@@ -4,8 +4,7 @@
 # Installs:
 #   ~/.aiprd/skill-config.json   (config for standalone use)
 #
-# The plugin bundles its own Node.js MCP server (zero deps) which handles
-# all license validation (Ed25519 + AES-256 encrypted persistence).
+# The plugin bundles its own Node.js MCP server (zero deps).
 # The MCP launcher (~/.aiprd/run-mcp.sh) is created by setup.sh.
 #
 # Usage:
@@ -43,6 +42,6 @@ if [ -f "$ENGINE_HOME/skill-config.json" ]; then
     echo "  $ENGINE_HOME/skill-config.json"
 fi
 echo ""
-echo "The plugin's bundled Node.js MCP server handles all license validation."
+echo "The plugin's bundled Node.js MCP server provides utility tools."
 echo "Next: ./scripts/setup.sh"
 echo ""

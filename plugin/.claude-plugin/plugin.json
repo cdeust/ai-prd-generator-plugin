@@ -9,7 +9,7 @@
   },
   "homepage": "https://ai-architect.tools",
   "repository": "https://github.com/cdeust/ai-prd-generator",
-  "license": "Commercial",
+  "license": "MIT",
   "keywords": [
     "prd",
     "product-requirements",

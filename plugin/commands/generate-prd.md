@@ -9,13 +9,6 @@ First, call the `check_health` MCP tool to verify the server is operational. **N
 - `environment: "cowork"` → **No direct network access.** Do NOT use MCP GitHub tools (`fetch_github_tree`, `fetch_github_file`, `github_login`). Use WebFetch, WebSearch, or ask the user to paste code instead.
 - `environment: "cli"` → Full access. Use `gh` CLI or MCP GitHub tools for repo analysis.
 
-Then call the `validate_license` MCP tool to determine the current license tier.
-
-Display the license tier banner:
-- **Licensed**: Full access to all 8 PRD types, 15 thinking strategies, and complete verification
-- **Trial**: Full access (14-day evaluation period) — show days remaining
-- **Free**: Limited to feature/bug PRD types, 2 thinking strategies, basic verification
-
 If the user provided a project description in `$ARGUMENTS`, use it as the initial input. Otherwise, ask for a project description.
 
 Now activate the `ai-prd-generator` skill to run the full PRD generation workflow:

@@ -1,68 +1,9 @@
 {
   "version": "1.0.0",
   "name": "AI Architect PRD Generator",
-  "description": "Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), 8 context-aware PRD types, real-time LLM streaming, license-aware tiered architecture (trial/free/licensed), 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 7 utility tools, and Cowork plugin support",
-  "license": {
-    "tiers": ["trial", "free", "licensed"],
-    "default_tier": "free",
-    "validation": {
-      "method": "cryptographic",
-      "validator_binary": "~/.aiprd/validate-license",
-      "build_command": "make build-validator",
-      "verification": {
-        "license_file": "Ed25519 signature + hardware fingerprint + expiry",
-        "trial_file": "HMAC-SHA256 tamper detection + hardware fingerprint + expiry"
-      }
-    },
-    "license_resolution": [
-      { "priority": 1, "source": "~/.aiprd/license.json", "condition": "Ed25519 signature verified, hardware match, not expired", "result": "licensed" },
-      { "priority": 2, "source": "~/.aiprd/trial.json", "condition": "HMAC valid, hardware match, not expired", "result": "trial" },
-      { "priority": 3, "source": "auto-create trial", "condition": "no existing trial", "result": "trial" },
-      { "priority": 4, "source": "default", "condition": "validator missing or all checks fail", "result": "free" }
-    ],
-    "trial": {
-      "duration_days": 14,
-      "storage_path": "~/.aiprd/trial.json",
-      "features": "licensed",
-      "purchase_url": "https://ai-architect.tools/purchase",
-      "security": "HMAC-SHA256 keyed from hardware fingerprint"
-    },
-    "free_tier": {
-      "strategies": ["zero_shot", "chain_of_thought"],
-      "prd_contexts": ["feature", "bug"],
-      "max_clarification_rounds": 3,
-      "max_clarification_questions": 5,
-      "verification": "basic",
-      "rag_max_hops": 1,
-      "sections_limit": 6,
-      "business_kpis": "summary_only"
-    },
-    "trial_tier": {
-      "strategies": "all",
-      "prd_contexts": "all",
-      "max_clarification_rounds": "unlimited",
-      "max_clarification_questions": "context_aware",
-      "verification": "full",
-      "rag_max_hops": "context_aware",
-      "sections_limit": "context_aware",
-      "business_kpis": "full"
-    },
-    "licensed_tier": {
-      "strategies": "all",
-      "prd_contexts": "all",
-      "max_clarification_rounds": "unlimited",
-      "max_clarification_questions": "context_aware",
-      "verification": "full",
-      "rag_max_hops": "context_aware",
-      "sections_limit": "context_aware",
-      "business_kpis": "full"
-    }
-  },
+  "description": "Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), 8 context-aware PRD types, real-time LLM streaming, 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 5 utility tools, and Cowork plugin support",
   "prd_contexts": {
     "available": ["proposal", "feature", "bug", "incident", "poc", "mvp", "release", "cicd"],
-    "free_tier_access": ["feature", "bug"],
-    "trial_tier_access": "all",
-    "licensed_tier_access": "all",
     "configurations": {
       "proposal": {
         "clarification_range": [5, 6],
@@ -300,11 +241,6 @@
       "validator": "StrategyComplianceValidator",
       "tracker": "StrategyEffectivenessTracker"
     },
-    "license_tiers": {
-      "free": ["chain_of_thought", "zero_shot"],
-      "trial": "all",
-      "licensed": "all"
-    },
     "expected_gains": {
       "strategy_hit_rate": ">85%",
       "compliance_rate": ">90%",
@@ -478,8 +414,6 @@
       "transport": "stdio",
       "command": "node ${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js",
       "tools": [
-        "validate_license",
-        "get_license_features",
         "get_config",
         "read_skill_config",
         "check_health",
@@ -489,7 +423,6 @@
     },
     "commands": [
       "generate-prd",
-      "validate-license",
       "index-codebase"
     ]
   }
