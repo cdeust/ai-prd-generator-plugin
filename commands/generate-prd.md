@@ -19,7 +19,7 @@ Call `check_health` MCP tool. Note the `environment` field:
 
 ## Step 2 — Load the full skill instructions
 
-**MANDATORY**: Use the Read tool to read the file `~/.claude/skills/ai-prd-generator/SKILL.md`. This file contains the complete PRD generation workflow with all rules, confidence thresholds, clarification loop behavior, section generation, and verification logic. You MUST read it and follow every rule in it.
+**MANDATORY**: Load the full skill instructions. First try to read `skills/ai-prd-generator/SKILL.md` relative to the plugin root. If not found, try `~/.claude/skills/ai-prd-generator/SKILL.md`. This file contains the complete PRD generation workflow with all rules, confidence thresholds, clarification loop behavior, section generation, and verification logic. You MUST read it and follow every rule in it.
 
 If the user provided a project description in `$ARGUMENTS`, use it as the initial input. Otherwise, ask for a project description.
 
