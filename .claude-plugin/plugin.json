@@ -1,6 +1,6 @@
 {
   "name": "ai-prd-generator",
-  "description": "Enterprise PRD generator with 8 PRD types, 15 thinking strategies, multi-judge verification, codebase analysis, and 4-file export",
+  "description": "Enterprise PRD generator with 8 PRD types, 15 thinking strategies, multi-judge verification, codebase analysis, and 9-file export",
   "author": {
     "name": "Clement Deust",
     "email": "admin@ai-architect.tools"
