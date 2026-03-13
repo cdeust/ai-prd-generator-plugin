@@ -1,6 +1,21 @@
 # AI PRD Generator Plugin
 
-This is the ai-prd-generator plugin repository. Run `./scripts/setup.sh` to install the skill and commands into Claude Code.
+This is the ai-prd-generator plugin repository for Claude Code.
+
+## Installation
+
+### Via Marketplace (recommended)
+```
+/plugin marketplace add cdeust/ai-prd-generator-plugin
+/plugin install ai-prd-generator
+```
+
+### Manual Setup
+```bash
+git clone https://github.com/cdeust/ai-prd-generator-plugin.git
+cd ai-prd-generator-plugin
+./scripts/setup.sh
+```
 
 ## Cowork Mode — IMPORTANT
 
@@ -12,7 +27,7 @@ If no project folder is shared, the plugin cannot perform codebase analysis and 
 
 ## Slash Commands
 
-After setup, the following slash commands are available from any Claude Code session:
+After installation, the following slash commands are available from any Claude Code session:
 
 - `/ai-prd-generator:generate-prd` — generate a PRD
 - `/ai-prd-generator:index-codebase` — index a codebase for RAG

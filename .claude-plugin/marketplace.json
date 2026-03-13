@@ -1,0 +1,26 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "AI PRD Generator",
+  "description": "Enterprise PRD generation with 8 PRD types, 15 thinking strategies, and multi-judge verification",
+  "owner": {
+    "name": "Clement Deust",
+    "email": "admin@ai-architect.tools"
+  },
+  "plugins": [
+    {
+      "name": "ai-prd-generator",
+      "description": "Generate production-ready PRDs with 8 context-aware types, 15 research-backed thinking strategies, multi-judge verification, JIRA export, and codebase analysis",
+      "author": {
+        "name": "Clement Deust",
+        "email": "admin@ai-architect.tools"
+      },
+      "source": {
+        "source": "relative",
+        "path": "."
+      },
+      "category": "development",
+      "homepage": "https://ai-architect.tools",
+      "tags": ["prd", "product-requirements", "documentation", "enterprise", "verification"]
+    }
+  ]
+}

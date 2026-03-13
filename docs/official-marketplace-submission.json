@@ -1,0 +1,15 @@
+{
+  "name": "ai-prd-generator",
+  "description": "Generate production-ready PRDs with 8 context-aware types, 15 research-backed thinking strategies, multi-judge verification, JIRA export, and codebase analysis",
+  "author": {
+    "name": "Clement Deust",
+    "email": "admin@ai-architect.tools"
+  },
+  "source": {
+    "source": "url",
+    "url": "https://github.com/cdeust/ai-prd-generator-plugin.git"
+  },
+  "category": "development",
+  "homepage": "https://ai-architect.tools",
+  "tags": ["community-managed"]
+}
