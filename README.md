@@ -1,6 +1,6 @@
 # AI PRD Generator
 
-**Stop writing PRDs from scratch.** This Claude Code plugin generates verified Product Requirements Documents — complete with JIRA tickets, test cases, and an audit trail that proves every claim.
+**Stop writing PRDs from scratch.** This Claude Code plugin generates verified Product Requirements Documents — nine files covering requirements, technical design, user stories, JIRA tickets, test cases, and a claim-by-claim verification report.
 
 ```
 /plugin marketplace add cdeust/ai-prd-generator-plugin
@@ -13,16 +13,21 @@ Then run `/ai-prd-generator` from any project. Free, open source, no account nee
 
 ## What You Get
 
-One command produces four files:
+One command produces nine files:
 
 | File | What's inside |
 |------|---------------|
-| `prd.md` | Full specification — overview, requirements, user stories, technical design, acceptance criteria |
-| `jira-tickets.md` | Story-pointed tasks with acceptance criteria, ready to import |
-| `test-cases.md` | Unit, integration, and e2e test coverage mapped to requirements |
-| `verification-report.md` | Claim-by-claim audit — every statement verified, contradictions flagged |
+| `prd-overview.md` | Executive summary, goals, scope, and strategic context |
+| `prd-requirements.md` | Functional and non-functional requirements with traceability |
+| `prd-user-stories.md` | User stories with acceptance criteria mapped to requirements |
+| `prd-technical.md` | Technical specification — architecture, data models, API contracts |
+| `prd-acceptance.md` | Detailed acceptance criteria with test conditions |
+| `prd-roadmap.md` | Implementation phases, milestones, and dependency ordering |
+| `prd-jira.md` | Story-pointed epics and tickets, ready to import |
+| `prd-tests.md` | Unit, integration, and e2e test cases mapped to requirements |
+| `prd-verification.md` | Claim-by-claim audit — structural integrity, consistency, completeness |
 
-See a real example: [`examples/PRD-SnippetLibraryCRUD.md`](examples/PRD-SnippetLibraryCRUD.md) (1,758 lines, 11 sections, 20 functional requirements, 12 non-functional requirements, 94% verification score).
+See a real example in [`examples/`](examples/) — a 2,766-line PRD for a policy-parameterized prompt system, with 24/24 structural integrity checks passed.
 
 ## How It Works
 
@@ -30,7 +35,7 @@ See a real example: [`examples/PRD-SnippetLibraryCRUD.md`](examples/PRD-SnippetL
 2. **Clarification loop** — The plugin asks structured questions until it reaches 90%+ confidence (or you say "proceed")
 3. **Strategy selection** — Picks from 15 thinking strategies based on your PRD type and complexity
 4. **Generation + verification** — Writes every section, then verifies each claim against 6 independent algorithms
-5. **Four files land in your directory** — ready for review, handoff, or sprint planning
+5. **Nine files land in your directory** — ready for review, handoff, or sprint planning
 
 ## Why This Exists
 
@@ -39,7 +44,7 @@ Most PRD tools run one prompt and hand you a rough draft. This one:
 - **Asks before assuming** — Confidence-driven clarification catches gaps before generation starts
 - **Verifies its own output** — Multi-judge consensus, graph analysis, atomic claim decomposition
 - **Reads your codebase** — Index your project first (`/ai-prd-generator:index-codebase /path`) and the PRD references your actual architecture, files, and patterns
-- **Ships work, not drafts** — JIRA tickets with story points, test cases with assertions, verification with audit trails
+- **Ships work, not drafts** — 9 files: requirements, tech spec, user stories, roadmap, JIRA tickets, test cases, acceptance criteria, verification report
 
 ## Quick Start
 
