@@ -29,7 +29,14 @@ Most PRD tools generate a document from a single prompt and call it done. This o
 
 ## Installation
 
-### Claude Code (Terminal)
+### Via Claude Code Marketplace (recommended)
+
+```
+/plugin marketplace add cdeust/ai-prd-generator-plugin
+/plugin install ai-prd-generator
+```
+
+### Manual Setup
 
 ```bash
 git clone https://github.com/cdeust/ai-prd-generator-plugin.git
