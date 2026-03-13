@@ -58,7 +58,7 @@ info "Skill installed → ~/.claude/skills/ai-prd-generator → repo"
 # ── 4. Install commands into Claude Code ─────────────────────────────────────
 
 # Claude Code discovers commands from ~/.claude/commands/<namespace>/name.md
-# Namespace "ai-prd-generator" gives: /ai-prd-generator:validate-license, etc.
+# Namespace "ai-prd-generator" gives: /ai-prd-generator:generate-prd, etc.
 
 COMMANDS_DIR="$CLAUDE_DIR/commands/ai-prd-generator"
 mkdir -p "$COMMANDS_DIR"
@@ -122,12 +122,9 @@ printf "\n${BOLD}${GREEN}Setup complete!${NC}\n\n"
 
 printf "  ${BOLD}Claude Code (CLI Terminal):${NC}\n"
 printf "    The skill and commands are installed. Start ${BOLD}claude${NC} from any directory, then:\n"
-printf "      ${BOLD}/ai-prd-generator:validate-license AIPRD-your-key${NC}  — activate a license\n"
-printf "      ${BOLD}/ai-prd-generator:validate-license${NC}                — check license status\n"
 printf "      ${BOLD}/ai-prd-generator:generate-prd${NC}                    — generate a PRD\n"
 printf "      ${BOLD}/ai-prd-generator:index-codebase${NC}                  — index a codebase\n"
-printf "      ${BOLD}/ai-prd-generator${NC}                                 — main skill\n"
-printf "    Or just say: ${BOLD}\"validate license key AIPRD-your-key-here\"${NC}\n\n"
+printf "      ${BOLD}/ai-prd-generator${NC}                                 — main skill\n\n"
 
 printf "  ${BOLD}Cowork (Claude Desktop):${NC}\n"
 printf "    Upload ${BOLD}dist/ai-prd-generator-plugin.zip${NC} as a local plugin in Cowork.\n\n"

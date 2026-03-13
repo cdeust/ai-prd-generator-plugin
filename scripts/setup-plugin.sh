@@ -61,10 +61,10 @@ if [ -f "$PLUGIN_DIR/mcp-server/index.js" ]; then
 else
     echo "WARNING: plugin/mcp-server/index.js not found"
 fi
-if [ -x "$ENGINE_HOME/validate-license" ]; then
-    echo "Engine: installed at $ENGINE_HOME (CLI mode: full crypto validation)"
+if [ -d "$ENGINE_HOME" ]; then
+    echo "Engine: installed at $ENGINE_HOME"
 else
-    echo "Engine: not installed (Cowork mode: file-based validation)"
+    echo "Engine: not installed (run setup.sh to install)"
 fi
 
 echo ""

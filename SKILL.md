@@ -1,15 +1,14 @@
 ---
 name: ai-prd-generator
 version: 1.0.0
-description: Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), context-aware depth (8 PRD types), license-aware tiered architecture, 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 7 utility tools, Cowork plugin support, and production-ready technical specifications
+description: Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), context-aware depth (8 PRD types), 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 5 utility tools, Cowork plugin support, and production-ready technical specifications
 dependencies: node>=18
 default_providers: claude_code_session, apple_intelligence
 optional_providers: openai, gemini, bedrock, openrouter, qwen, zhipu, moonshot, minimax
-license_tiers: trial, free, licensed
 prd_contexts: proposal, feature, bug, incident, poc, mvp, release, cicd
 vision_platforms: apple, android, java_enterprise, web
 engines: shared_utilities, rag, verification, meta_prompting, strategy, vision, orchestration, encryption
-mcp_tools: validate_license, get_license_features, get_config, read_skill_config, check_health, get_prd_context_info, list_available_strategies
+mcp_tools: get_config, read_skill_config, check_health, get_prd_context_info, list_available_strategies
 plugin: ai-prd-generator
 engine_home: ${CLAUDE_PLUGIN_ROOT} (Cowork) or ~/.aiprd (CLI)
 ---
@@ -29,79 +28,6 @@ I generate **production-ready** Product Requirements Documents with 8 independen
 - Clarification questions (Rule 1) - gathering requirements
 - PRD context detection (Rule 4) - determining PRD type
 - Any decision point requiring user input
-
-### Pre-Rule: License Gate (MANDATORY — runs BEFORE Rule 0)
-
-**On EVERY invocation, I MUST resolve the license tier before doing anything else.**
-
-**License Resolution — MCP Tool (Dual-Mode):**
-
-I MUST call the `validate_license` MCP tool, which handles validation automatically in both environments:
-- **CLI mode:** Delegates to the external `~/.aiprd/validate-license` binary (Ed25519, hardware fingerprint)
-- **Cowork mode:** Uses in-plugin file-based validation (reads license.json from plugin directory)
-
-**Step 1:** Call the `validate_license` MCP tool. It returns:
-```json
-{
-  "tier": "licensed|trial|free",
-  "features": ["thinking_strategies", "advanced_rag", ...],
-  "signature_verified": true|false,
-  "hardware_verified": true|false,
-  "expires_at": "2026-12-31T00:00:00Z",
-  "days_remaining": 365,
-  "source": "license_file|trial|default_free",
-  "environment": "cli|cowork",
-  "errors": []
-}
-```
-
-**Step 2:** Set the session tier from the `"tier"` field in the response.
-
-**If the MCP tool is unavailable or returns an error → default to FREE tier.**
-
-**License Banner (MUST display after resolution):**
-
-**LICENSED:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AI PRD Generator — LICENSED
-  All 15 strategies | Full verification | All 8 PRD types
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**TRIAL:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AI PRD Generator — TRIAL (X days remaining)
-  Full access — all features unlocked
-  Purchase: https://ai-architect.tools/purchase
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**FREE:**
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  AI PRD Generator — FREE TIER
-  2 strategies | 3 clarification rounds | feature/bug PRDs only
-  Upgrade: https://ai-architect.tools/purchase
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Session Constraints Table (set after resolution):**
-
-| Feature | LICENSED / TRIAL | FREE |
-|---------|-----------------|------|
-| Strategies | All 15 | zero_shot, chain_of_thought |
-| Clarification rounds | Unlimited | 3 max |
-| Verification | Full (6 algorithms) | Basic (single pass) |
-| PRD types | All 8 | feature, bug |
-| RAG | Full hybrid search | Basic keyword search |
-| Business KPIs | Full 8 systems | Summary only |
-| File export | 4 files | 4 files (with free-tier footer) |
-
-**I store the resolved tier in memory for the entire session and enforce it in all subsequent rules.**
-
----
 
 ### Rule 0: Feasibility Gate (SCOPE CHOICE)
 
@@ -205,13 +131,6 @@ If "Focused Epic PRD" → AskUserQuestion to select epic → Generate implementa
 - **NEVER automatic**: I NEVER auto-proceed based on confidence scores alone
 - **Interactive questions**: I use AskUserQuestion tool with multi-choice options
 
-**FREE tier cap:** In FREE mode, clarification is limited to **3 rounds**. After round 3, I auto-proceed with a notice:
-```
-⚠️ Free tier: 3 clarification rounds reached — proceeding with gathered context.
-For unlimited clarification rounds, upgrade: https://ai-architect.tools/purchase
-```
-LICENSED and TRIAL tiers have no round limit.
-
 ### Rule 2: Incremental Section Generation
 
 - **ONE section at a time**: I generate and show each section immediately
@@ -240,20 +159,10 @@ LICENSED and TRIAL tiers have no round limit.
 | **release** | "release", "deploy", "production", "version", "rollout" | Production readiness | 9-11 | 10 | 3 hops |
 | **cicd** | "ci/cd", "pipeline", "github actions", "jenkins", "automation", "devops" | Pipeline automation | 7-9 | 9 | 3 hops |
 
-**FREE tier PRD type restriction:** In FREE mode, only `feature` and `bug` are available. If the user requests a restricted type (proposal, incident, poc, mvp, release, cicd), I display:
-```
-⚠️ Free tier: "{requested_type}" PRDs require a license.
-Available free types: feature, bug
-Upgrade for all 8 PRD types: https://ai-architect.tools/purchase
-```
-Then I offer `feature` as the fallback via AskUserQuestion. LICENSED and TRIAL tiers have access to all 8 types.
-
 **Context Detection Process:**
 1. Analyze user's initial request for context trigger words
-2. **If FREE tier:** Filter detected type — if restricted, show notice and offer feature/bug only
-3. If unclear, **use AskUserQuestion** to determine PRD type:
+2. If unclear, **use AskUserQuestion** to determine PRD type:
 
-**LICENSED / TRIAL:**
 ```
 AskUserQuestion({
   questions: [{
@@ -264,28 +173,17 @@ AskUserQuestion({
       { label: "Feature", description: "Implementation-ready, technical depth" },
       { label: "MVP", description: "Fastest path to market, core value" },
       { label: "Bug Fix", description: "Root cause analysis, regression prevention" },
-      { label: "Proposal", description: "Stakeholder-facing, business case" }
+      { label: "Proposal", description: "Stakeholder-facing, business case" },
+      { label: "Incident", description: "Deep forensic investigation, prevention" },
+      { label: "POC", description: "Proof of concept, feasibility validation" },
+      { label: "Release", description: "Production readiness, deployment plan" },
+      { label: "CI/CD", description: "Pipeline automation, DevOps" }
     ]
   }]
 })
 ```
 
-**FREE:**
-```
-AskUserQuestion({
-  questions: [{
-    question: "What type of PRD is this? (Free tier: 2 types available)",
-    header: "PRD Type",
-    multiSelect: false,
-    options: [
-      { label: "Feature", description: "Implementation-ready, technical depth" },
-      { label: "Bug Fix", description: "Root cause analysis, regression prevention" }
-    ]
-  }]
-})
-```
-
-4. Adapt all subsequent behavior based on detected context
+3. Adapt all subsequent behavior based on detected context
 
 **Context-Specific Behavior:**
 
@@ -360,99 +258,6 @@ AskUserQuestion({
 - **Default location**: Current working directory, or user-specified path
 - **NO inline content**: All detailed content goes to files, NOT chat output
 - **Summary only in chat**: I show a brief summary with file paths after generation
-
----
-
-## LICENSE TIERS
-
-**The system supports three license tiers: Trial (14-day full access), Free (degraded), and Licensed (full).**
-
-### Trial Tier (14-Day Full Access)
-
-On first invocation, a trial is auto-created with a 14-day window. In CLI mode, this is stored at `~/.aiprd/trial.json`. In Cowork mode, trial state does not persist between sessions. During trial, all features are unlocked — identical to Licensed tier.
-
-| Feature | Availability | Details |
-|---------|-------------|---------|
-| **Thinking Strategies** | All 15 | Full access with research-based prioritization |
-| **Clarification Rounds** | Unlimited | User-driven stopping only |
-| **Verification Engine** | Full | Multi-judge consensus, CoVe, Atomic Decomposition, Debate |
-| **PRD Types** | All 8 | proposal, feature, bug, incident, poc, mvp, release, cicd |
-| **RAG Engine** | Full | Hybrid search, contextual BM25 |
-| **Business KPIs** | Full | All 8 metric systems |
-| **Codebase Analysis** | Full | With RAG-enhanced context |
-
-**Trial state file (`~/.aiprd/trial.json`):**
-```json
-{
-  "version": 1,
-  "trial_started_at": "2026-02-10T14:30:00Z",
-  "trial_duration_days": 14,
-  "trial_expires_at": "2026-02-24T14:30:00Z",
-  "invocation_count": 1
-}
-```
-
-**Trial expiry:** When `trial_expires_at` is in the past, tier degrades to FREE automatically.
-
-### Free Tier (Post-Trial Degraded)
-
-Active when trial has expired and no license is present.
-
-| Feature | Availability | Limitation |
-|---------|-------------|------------|
-| **Thinking Strategies** | 2 of 15 | Only `zero_shot` and `chain_of_thought` |
-| **Clarification Rounds** | 3 max | Auto-proceeds after round 3 |
-| **Verification Engine** | Basic only | Single pass, no multi-judge, no debate |
-| **PRD Types** | 2 of 8 | Only `feature` and `bug` |
-| **RAG Engine** | Basic | Keyword search only |
-| **Business KPIs** | Summary only | No detailed metric systems |
-| **Codebase Analysis** | Available | Basic context |
-
-### Licensed Tier (Full)
-
-Active with cryptographically verified license file.
-
-| Feature | Availability | Details |
-|---------|-------------|---------|
-| **Thinking Strategies** | All 15 | Full access with research-based prioritization |
-| **Clarification Rounds** | Unlimited | User-driven stopping only |
-| **Verification Engine** | Full | Multi-judge consensus, CoVe, Atomic Decomposition, Debate |
-| **PRD Types** | All 8 | All context types available |
-| **RAG Engine** | Full | Hybrid search, contextual BM25 |
-| **Business KPIs** | Full | All 8 metric systems |
-| **Codebase Analysis** | Full | With RAG-enhanced context |
-
-### Configuration
-
-**CLI mode (persistent environment):**
-```bash
-# Trial: auto-created on first invocation at ~/.aiprd/trial.json
-# Licensed: place a signed license at ~/.aiprd/license.json
-# Build validator: make build-validator
-```
-
-**Cowork mode (ephemeral VM):**
-```
-# Licensed: place a license.json in the plugin root directory
-# Trial: does not persist between sessions (VM resets)
-# The bundled MCP server handles validation automatically
-```
-
-### License Resolution (Dual-Mode)
-
-The MCP server's `validate_license` tool handles resolution automatically:
-
-**CLI mode** (external binary at `~/.aiprd/validate-license`):
-1. `~/.aiprd/license.json` — Ed25519 signature verified + hardware fingerprint + not expired → **LICENSED**
-2. `~/.aiprd/trial.json` — HMAC tamper detection + hardware fingerprint + not expired → **TRIAL**
-3. No valid trial → auto-create 14-day trial → **TRIAL**
-4. All checks fail → **FREE**
-
-**Cowork mode** (bundled in-plugin validation):
-1. `${PLUGIN_ROOT}/license.json` — file-based validation + not expired → **LICENSED**
-2. `~/.aiprd/license.json` — file-based validation + not expired → **LICENSED**
-3. `~/.aiprd/trial.json` — not expired → **TRIAL**
-4. No valid files → **FREE**
 
 ---
 
@@ -1200,7 +1005,7 @@ All assumptions made during PRD generation that require stakeholder validation.
 ---
 
 *PRD generated by AI PRD Generator v7.1.0 | Enterprise Edition*
-*License: {LICENSED|TRIAL (X days)|FREE} | Verification: 6 algorithms | Reasoning: 15 strategies | 30+ KPIs tracked*
+*Verification: 6 algorithms | Reasoning: 15 strategies | 30+ KPIs tracked*
 *Accuracy: +XX% | Cost: -XX% | Stall Recovery: XX% | Full audit trail included*
 ```
 
@@ -1791,20 +1596,6 @@ Total: 125 SP (~9 weeks, 2-person team)
 
 ### Verification Engine (6 Innovations)
 
-**License Tier Access:**
-
-| Algorithm | Free Tier | Licensed Tier |
-|-----------|-----------|---------------|
-| KS Adaptive Consensus | ❌ | ✅ |
-| Zero-LLM Graph Verification | ❌ | ✅ |
-| Multi-Agent Debate | ❌ | ✅ |
-| Complexity-Aware Strategy | ❌ | ✅ |
-| Atomic Claim Decomposition | ❌ | ✅ |
-| Unified Verification Pipeline | ❌ | ✅ |
-
-**Free tier:** Basic verification only (single pass, no consensus)
-**Licensed tier:** Full multi-strategy verification with all 6 algorithms
-
 #### Algorithm 1: KS Adaptive Consensus
 
 Stops verification early when judges agree, saving 30-50% LLM calls:
@@ -1921,19 +1712,6 @@ Templates ↔ Expansion ↔ Metacognitive ↔ Collaborative:
 
 **Research Sources:** MIT, Stanford, Harvard, ETH Zürich, Princeton, Google, Anthropic, OpenAI, DeepSeek (2023-2025)
 
-**License Tier Access:**
-
-| Component | Free Tier | Licensed Tier |
-|-----------|-----------|---------------|
-| Research Evidence Database | ❌ | ✅ |
-| Research-Weighted Selector | ❌ | ✅ |
-| Strategy Enforcement Engine | ❌ | ✅ |
-| Strategy Compliance Validator | ❌ | ✅ |
-| Strategy Effectiveness Tracker | ❌ | ✅ |
-
-**Free tier:** Basic strategy selection (chain_of_thought, zero_shot only)
-**Licensed tier:** Full research-optimized selection from all tiers
-
 #### Algorithm 13: Research Evidence Database
 
 Machine-readable database of peer-reviewed findings:
@@ -2011,52 +1789,33 @@ When a `codebaseId` is provided, each strategy:
 
 **Based on MIT/Stanford/Harvard/Anthropic/OpenAI/DeepSeek research (2024-2025):**
 
-| Tier | Strategies | Research Basis | License |
-|------|------------|----------------|---------|
-| **Tier 1 (Most Effective)** | TRM, verified_reasoning, self_consistency | Anthropic extended thinking, OpenAI o1/o3 test-time compute | Licensed |
-| **Tier 2 (Highly Effective)** | tree_of_thoughts, graph_of_thoughts, react, reflexion | Stanford ToT paper, MIT GoT research, DeepSeek R1 | Licensed |
-| **Tier 3 (Contextual)** | few_shot, meta_prompting, plan_and_solve, problem_analysis | RAG-enhanced example generation, Meta AI research | Licensed |
-| **Tier 4 (Basic)** | zero_shot, chain_of_thought | Direct prompting (baseline) | Free |
+| Tier | Strategies | Research Basis |
+|------|------------|----------------|
+| **Tier 1 (Most Effective)** | TRM, verified_reasoning, self_consistency | Anthropic extended thinking, OpenAI o1/o3 test-time compute |
+| **Tier 2 (Highly Effective)** | tree_of_thoughts, graph_of_thoughts, react, reflexion | Stanford ToT paper, MIT GoT research, DeepSeek R1 |
+| **Tier 3 (Contextual)** | few_shot, meta_prompting, plan_and_solve, problem_analysis | RAG-enhanced example generation, Meta AI research |
+| **Tier 4 (Basic)** | zero_shot, chain_of_thought | Direct prompting (baseline) |
 
 #### Strategy Details with RAG Integration
 
-| Strategy | Use Case | RAG Enhancement | License |
-|----------|----------|-----------------|---------|
-| **TRM** | Extended thinking with statistical halting | Uses codebase patterns for confidence calibration | Licensed |
-| **Verified-Reasoning** | Integration with verification engine | RAG context for claim verification | Licensed |
-| **Self-Consistency** | Multiple paths with voting | Codebase examples guide path generation | Licensed |
-| **Tree-of-Thoughts** | Branching exploration with evaluation | Domain entities inform branch scoring | Licensed |
-| **Graph-of-Thoughts** | Multi-hop reasoning with connections | Architecture patterns enrich graph nodes | Licensed |
-| **ReAct** | Reasoning + Action cycles | Code patterns inform action selection | Licensed |
-| **Reflexion** | Self-reflection with memory | Historical patterns guide reflection | Licensed |
-| **Few-Shot** | Example-based reasoning | **RAG-generated examples from codebase** | Licensed |
-| **Meta-Prompting** | Dynamic strategy selection | Context-aware strategy routing | Licensed |
-| **Plan-and-Solve** | Structured planning with verification | Existing code guides plan decomposition | Licensed |
-| **Problem-Analysis** | Deep problem decomposition | Codebase structure informs analysis | Licensed |
-| **Generate-Knowledge** | Knowledge generation before reasoning | RAG provides domain knowledge | Licensed |
-| **Prompt-Chaining** | Sequential prompt execution | Chain steps informed by patterns | Licensed |
-| **Multimodal-CoT** | Vision-integrated reasoning | Combines vision + codebase context | Licensed |
-| **Zero-Shot** | Direct reasoning without examples | Baseline strategy | Free |
-| **Chain-of-Thought** | Step-by-step reasoning | Baseline strategy | Free |
-
-#### Free Tier Strategy Degradation
-
-When a licensed strategy is requested on **FREE** tier:
-```
-Request: tree_of_thoughts → Degrades to: chain_of_thought
-Request: verified_reasoning → Degrades to: chain_of_thought
-Request: meta_prompting → Degrades to: chain_of_thought
-```
-
-All advanced strategies gracefully degrade to `chain_of_thought` for free users.
-
-**TRIAL** tier: No degradation — all 15 strategies available during the 14-day trial.
-
-When degradation occurs, I display:
-```
-ℹ️ Strategy "{requested}" requires a license — using chain_of_thought instead.
-Upgrade for all 15 strategies: https://ai-architect.tools/purchase
-```
+| Strategy | Use Case | RAG Enhancement |
+|----------|----------|-----------------|
+| **TRM** | Extended thinking with statistical halting | Uses codebase patterns for confidence calibration |
+| **Verified-Reasoning** | Integration with verification engine | RAG context for claim verification |
+| **Self-Consistency** | Multiple paths with voting | Codebase examples guide path generation |
+| **Tree-of-Thoughts** | Branching exploration with evaluation | Domain entities inform branch scoring |
+| **Graph-of-Thoughts** | Multi-hop reasoning with connections | Architecture patterns enrich graph nodes |
+| **ReAct** | Reasoning + Action cycles | Code patterns inform action selection |
+| **Reflexion** | Self-reflection with memory | Historical patterns guide reflection |
+| **Few-Shot** | Example-based reasoning | **RAG-generated examples from codebase** |
+| **Meta-Prompting** | Dynamic strategy selection | Context-aware strategy routing |
+| **Plan-and-Solve** | Structured planning with verification | Existing code guides plan decomposition |
+| **Problem-Analysis** | Deep problem decomposition | Codebase structure informs analysis |
+| **Generate-Knowledge** | Knowledge generation before reasoning | RAG provides domain knowledge |
+| **Prompt-Chaining** | Sequential prompt execution | Chain steps informed by patterns |
+| **Multimodal-CoT** | Vision-integrated reasoning | Combines vision + codebase context |
+| **Zero-Shot** | Direct reasoning without examples | Baseline strategy |
+| **Chain-of-Thought** | Step-by-step reasoning | Baseline strategy |
 
 ---
 
@@ -2253,8 +2012,7 @@ echo $ANTHROPIC_API_KEY
 
 ## VERSION HISTORY
 
-- **v1.0.0**: Unified release — Dual-mode MCP server (CLI + Cowork), 7 utility tools, Ed25519 license signing with AES-256 encrypted persistence, marketplace-ready plugin, unified naming as AI Architect PRD Generator
-- **v7.1.0**: 14-day trial + 3-tier license enforcement (Trial/Free/Licensed), trial.json auto-creation, free-tier PRD type restrictions, clarification round caps, strategy degradation notices
+- **v1.0.0**: Dual-mode MCP server (CLI + Cowork), 8 PRD types, 15 thinking strategies, multi-judge verification, 4-file export
 - **v7.0.0**: Phase 7 complete - Vision Engine + Business KPIs (8 metric systems) with documented baselines
 - **v6.0.0**: Business KPIs research, Video-RAG research, DeepSeek-OCR research
 - **v5.0.0**: VisionEngine (Apple Foundation Models, 180+ components, multi-provider)
@@ -2262,7 +2020,7 @@ echo $ANTHROPIC_API_KEY
 - **v4.4.0**: Extended context-aware PRD generation to 7 types (added poc/mvp/release) with context-specific sections, clarification questions, RAG focus, and strategy selection
 - **v4.3.0**: Context-aware PRD generation (proposal/feature/bug/incident) with adaptive depth, context-specific sections, and RAG depth optimization
 - **v4.2.0**: Real-time LLM streaming across all 15 thinking strategies with automatic fallback
-- **v4.1.0**: License-aware tiered architecture + RAG integration for all 15 strategies + Research-based prioritization (MIT/Stanford/Harvard/Anthropic/OpenAI/DeepSeek)
+- **v4.1.0**: RAG integration for all 15 strategies + Research-based prioritization (MIT/Stanford/Harvard/Anthropic/OpenAI/DeepSeek)
 - **v4.0.0**: Meta-Prompting Engine with 15 strategies + 6 cross-enhancement innovations + 30+ KPIs
 - **v3.0.0**: Enterprise output + 6 verification algorithms
 - **v2.0.0**: Contextual BM25 RAG (+49% precision)
@@ -2282,9 +2040,3 @@ echo $ANTHROPIC_API_KEY
 - **Release**: 10 sections, production readiness, deep RAG (3 hops)
 - **CI/CD**: 9 sections, pipeline automation, deep RAG (3 hops)
 
-**License Status:**
-- Trial tier (14 days): Full access — all 15 strategies, unlimited clarification, full verification, all 8 PRD types
-- Free tier (post-trial): Basic strategies (zero_shot, chain_of_thought), 3 clarification rounds max, basic verification, feature/bug PRDs only
-- Licensed tier: All 15 RAG-enhanced strategies with research-based prioritization, unlimited clarification, full verification engine, context-aware depth adaptation
-
-**Purchase:** https://ai-architect.tools/purchase

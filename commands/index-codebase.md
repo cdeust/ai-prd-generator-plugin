@@ -9,27 +9,13 @@ argument-hint: "[directory-path-or-github-url]"
 
 ## Step 1 — Detect mode
 
-Check your available tools list. If a tool named `mcp__ai-prd-generator__validate_license` exists, you are in **Cowork mode**. Otherwise you are in **CLI Terminal mode**.
-
-## Step 2 — Resolve license
-
-**CLI Terminal mode:**
-
-Use the Read tool to read the file `~/.aiprd/license-key`.
-- If the file exists and contains a key starting with `AIPRD-`, the tier is **licensed**. No API call needed. Proceed.
-- If the file does not exist or is empty, ask the user with AskUserQuestion: "No license key found. Would you like to enter a license key or continue with free tier?"
-  - **Enter license key** → user provides an AIPRD- key. Validate it against the Polar.sh API (see validate-license command). If valid, save to `~/.aiprd/license-key` and set tier to **licensed**. If invalid, set tier to **free**.
-  - **Continue without** → tier is **free**.
+Check your available tools list. If a tool named `mcp__ai-prd-generator__check_health` exists, you are in **Cowork mode**. Otherwise you are in **CLI Terminal mode**.
 
 **Cowork mode:**
 
 Call `check_health` MCP tool. Note the `environment` field:
 - `environment: "cli"` → Local directory access. Use `$ARGUMENTS` as the target path.
 - `environment: "cowork"` → The plugin analyzes codebases from **locally shared directories**. If the user has shared a project folder, use Glob/Grep/Read to index it directly. If no directory is shared and `$ARGUMENTS` is a GitHub URL, try WebFetch as a fallback (may time out). If neither works, ask the user to share the project directory with the Cowork session.
-
-Then call `validate_license` MCP tool.
-
-Verify the current tier supports RAG features. If the tier is `free`, inform the user that RAG indexing is limited to 1 hop depth.
 
 ## CLI Terminal Mode
 
@@ -70,6 +56,6 @@ Source:     [directory path | GitHub URL | user-provided]
 Files:      [count] source files analyzed
 Patterns:   [list of detected patterns]
 Entities:   [count] extracted
-RAG Depth:  [tier-dependent hop count]
+RAG Depth:  [context-aware hop count]
 Mode:       [cli | cowork]
 ```

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * AI Architect PRD Generator — Dual-Mode MCP Server (Zero Dependencies)
+ * AI Architect PRD Generator — MCP Server (Zero Dependencies)
  *
  * Runs in two modes:
- *   CLI mode  : delegates license validation to ~/.aiprd/validate-license binary
- *   Cowork mode: uses built-in file-based validation (no hardware fingerprint)
+ *   CLI mode  : full network access, GitHub device flow available
+ *   Cowork mode: sandboxed VM, uses Glob/Grep/Read for codebase analysis
  *
  * Environment detection is automatic via CLAUDE_PLUGIN_ROOT.
  * No external dependencies required — Node.js only.
@@ -16,7 +16,6 @@
  *   2. Accept header override for non-API GitHub endpoints
  */
 
-const crypto = require("crypto");
 const fs = require("fs");
 const https = require("https");
 const os = require("os");
@@ -200,15 +199,6 @@ async function pollDeviceFlow() {
 }
 
 // ---------------------------------------------------------------------------
-// Ed25519 Public Key — for license signature verification
-// The private key is NEVER shipped. Only the author can sign licenses.
-// ---------------------------------------------------------------------------
-
-const LICENSE_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAoqKxCXUCWxvRwExXDLPN9QBfncHmrQLVdYSIK2s+DZg=
------END PUBLIC KEY-----`;
-
-// ---------------------------------------------------------------------------
 // Paths & Config
 // ---------------------------------------------------------------------------
 
@@ -248,302 +238,10 @@ function detectEnvironment() {
 const ENVIRONMENT = detectEnvironment();
 
 // ---------------------------------------------------------------------------
-// License Validation — Encrypted persistence, no readable files
-// ---------------------------------------------------------------------------
-
-// In-memory license state — populated from encrypted store on startup,
-// or set by activate_license. No plain-text license data ever touches disk.
-let _cachedLicense = null;
-
-// Derive a per-machine AES-256 key from stable system identifiers.
-// This ensures the encrypted blob is tied to this machine and not portable.
-const _encKey = crypto
-  .createHash("sha256")
-  .update(`aiprd:${os.hostname()}:${os.userInfo().username}:${PLUGIN_ROOT}`)
-  .digest();
-
-function _storageLocation() {
-  return path.join(ENGINE_HOME, ".lk");
-}
-
-function _persistKey(aiprdKey) {
-  try {
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv("aes-256-cbc", _encKey, iv);
-    const encrypted = Buffer.concat([cipher.update(aiprdKey, "utf8"), cipher.final()]);
-    const blob = Buffer.concat([iv, encrypted]);
-    const dest = _storageLocation();
-    const dir = path.dirname(dest);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(dest, blob, { mode: 0o600 });
-  } catch (e) {
-    process.stderr.write(`[ai-prd-generator] Could not persist activation: ${e.message}\n`);
-  }
-}
-
-function _loadPersistedKey() {
-  try {
-    const blob = fs.readFileSync(_storageLocation());
-    if (blob.length < 17) return null;
-    const iv = blob.subarray(0, 16);
-    const encrypted = blob.subarray(16);
-    const decipher = crypto.createDecipheriv("aes-256-cbc", _encKey, iv);
-    return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString("utf8");
-  } catch (_) {
-    return null;
-  }
-}
-
-function _activateFromKey(aiprdKey) {
-  if (!aiprdKey || !aiprdKey.startsWith("AIPRD-")) return null;
-  let license;
-  try {
-    const decoded = Buffer.from(aiprdKey.slice(6), "base64").toString("utf8");
-    license = JSON.parse(decoded);
-  } catch (_) {
-    return null;
-  }
-  if (!verifyLicenseSignature(license)) return null;
-  const expiresAt = new Date(license.expires_at || 0);
-  if (expiresAt <= new Date()) return null;
-  return {
-    tier: license.tier,
-    features: license.enabled_features || getFeaturesListForTier(license.tier),
-    signature_verified: true,
-    hardware_verified: false,
-    expires_at: license.expires_at,
-    days_remaining: Math.ceil((expiresAt - new Date()) / 86_400_000),
-    source: "activated_key",
-    environment: ENVIRONMENT,
-    errors: [],
-  };
-}
-
-function validateLicense() {
-  // 1. Return cached result if already resolved this session
-  if (_cachedLicense) return _cachedLicense;
-
-  // 2. CLI mode: try external binary (full crypto: Ed25519, HMAC, hardware-bound)
-  if (ENVIRONMENT === "cli") {
-    const validatorPath = path.join(ENGINE_HOME, "validate-license");
-    if (fs.existsSync(validatorPath)) {
-      try {
-        const raw = execSync(validatorPath, { encoding: "utf8", timeout: 5000 });
-        const result = JSON.parse(raw);
-        result.environment = ENVIRONMENT;
-        _cachedLicense = result;
-        return result;
-      } catch (e) {
-        process.stderr.write(`[ai-prd-generator] External validator failed: ${e.message}\n`);
-      }
-    }
-  }
-
-  // 3. Try loading from encrypted store (persisted by a previous activate_license)
-  const storedKey = _loadPersistedKey();
-  if (storedKey) {
-    const result = _activateFromKey(storedKey);
-    if (result) {
-      _cachedLicense = result;
-      return result;
-    }
-  }
-
-  // 4. No activation — default to free tier
-  return freeTierResult();
-}
-
-function freeTierResult() {
-  return {
-    tier: "free",
-    features: getFeaturesListForTier("free"),
-    signature_verified: false,
-    hardware_verified: false,
-    expires_at: null,
-    days_remaining: null,
-    source: "default_free",
-    environment: ENVIRONMENT,
-    errors: [],
-  };
-}
-
-function verifyLicenseSignature(license) {
-  try {
-    const { signature, ...data } = license;
-    if (!signature) return false;
-    const payload = JSON.stringify(data, Object.keys(data).sort());
-    const publicKey = crypto.createPublicKey(LICENSE_PUBLIC_KEY);
-    return crypto.verify(null, Buffer.from(payload), publicKey, Buffer.from(signature, "base64"));
-  } catch (_) {
-    return false;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Feature resolution from skill-config.json
-// ---------------------------------------------------------------------------
-
-const ALL_LICENSED_FEATURES = [
-  "thinking_strategies",
-  "advanced_rag",
-  "verification_engine",
-  "vision_engine",
-  "orchestration_engine",
-  "encryption_engine",
-  "strategy_engine",
-];
-
-function getFeaturesListForTier(tier) {
-  if (tier === "licensed" || tier === "trial") {
-    return ALL_LICENSED_FEATURES;
-  }
-  return [];
-}
-
-function getFeaturesForTier(tier) {
-  const licenseConfig = skillConfig.license || {};
-
-  if (tier === "licensed" || tier === "trial") {
-    const tierKey = tier === "licensed" ? "licensed_tier" : "trial_tier";
-    const tierConfig = licenseConfig[tierKey] || {};
-    return {
-      strategies: "all",
-      strategies_list: (skillConfig.thinking || {}).available_strategies || [],
-      prd_contexts: "all",
-      prd_contexts_list: ((skillConfig.prd_contexts || {}).available) || [],
-      max_clarification_rounds: "unlimited",
-      max_clarification_questions: "context_aware",
-      verification: "full",
-      rag_max_hops: "context_aware",
-      sections_limit: "context_aware",
-      business_kpis: "full",
-      ...tierConfig,
-    };
-  }
-
-  // Free tier
-  const freeTier = licenseConfig.free_tier || {};
-  return {
-    strategies: freeTier.strategies || ["zero_shot", "chain_of_thought"],
-    strategies_list: freeTier.strategies || ["zero_shot", "chain_of_thought"],
-    prd_contexts: freeTier.prd_contexts || ["feature", "bug"],
-    prd_contexts_list: freeTier.prd_contexts || ["feature", "bug"],
-    max_clarification_rounds: freeTier.max_clarification_rounds || 3,
-    max_clarification_questions: freeTier.max_clarification_questions || 5,
-    verification: freeTier.verification || "basic",
-    rag_max_hops: freeTier.rag_max_hops || 1,
-    sections_limit: freeTier.sections_limit || 6,
-    business_kpis: freeTier.business_kpis || "summary_only",
-  };
-}
-
-// ---------------------------------------------------------------------------
 // MCP Tool definitions
 // ---------------------------------------------------------------------------
 
 const TOOLS = {
-  validate_license: {
-    description:
-      "Validate the current license tier. Returns tier, features, and validation details. Works in both CLI (external binary) and Cowork (in-plugin) modes.",
-    inputSchema: { type: "object", properties: {}, required: [] },
-    handler(_args) {
-      return validateLicense();
-    },
-  },
-
-  activate_license: {
-    description:
-      "Activate a license key for this session. The key is a self-contained, Ed25519-signed token received after purchase. Format: AIPRD-{base64_payload}. Verifies the signature cryptographically — no network needed, no files written. The activation lives in memory for the duration of the session.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        key: {
-          type: "string",
-          description:
-            "The license key received after purchase (starts with AIPRD-)",
-        },
-      },
-      required: ["key"],
-    },
-    handler(args) {
-      const key = (args.key || "").trim();
-      if (!key.startsWith("AIPRD-")) {
-        return {
-          activated: false,
-          error: "Invalid key format. License keys start with AIPRD-",
-        };
-      }
-
-      // Decode the self-contained license payload
-      let license;
-      try {
-        const payload = key.slice(6); // strip "AIPRD-"
-        const decoded = Buffer.from(payload, "base64").toString("utf8");
-        license = JSON.parse(decoded);
-      } catch (_) {
-        return {
-          activated: false,
-          error: "Could not decode license key. Ensure you copied the full key.",
-        };
-      }
-
-      // Verify Ed25519 signature — tampered or forged keys fail here
-      if (!verifyLicenseSignature(license)) {
-        return {
-          activated: false,
-          error: "License signature verification failed. This key is invalid or corrupted.",
-        };
-      }
-
-      // Check expiry
-      const expiresAt = new Date(license.expires_at || 0);
-      if (expiresAt <= new Date()) {
-        return {
-          activated: false,
-          error: `License expired on ${license.expires_at}. Visit https://ai-architect.tools/purchase to renew.`,
-        };
-      }
-
-      // Cache in memory and persist as encrypted blob (no readable files)
-      const result = _activateFromKey(key);
-      _cachedLicense = result;
-      _persistKey(key);
-
-      return {
-        activated: true,
-        tier: result.tier,
-        features: result.features,
-        expires_at: result.expires_at,
-        days_remaining: result.days_remaining,
-        message: `License activated! You now have full access to all ${result.tier} features.`,
-      };
-    },
-  },
-
-  get_license_features: {
-    description:
-      "Get the full feature set available for a given license tier.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        tier: {
-          type: "string",
-          enum: ["free", "trial", "licensed"],
-          description: "The license tier to query features for",
-        },
-      },
-      required: [],
-    },
-    handler(args) {
-      const tier = args.tier || validateLicense().tier;
-      return {
-        tier,
-        features: getFeaturesForTier(tier),
-        environment: ENVIRONMENT,
-      };
-    },
-  },
-
   get_config: {
     description: "Get the full plugin configuration.",
     inputSchema: { type: "object", properties: {}, required: [] },
@@ -569,7 +267,7 @@ const TOOLS = {
         section: {
           type: "string",
           description:
-            "Config section to read (e.g. 'license', 'prd_contexts', 'thinking', 'verification')",
+            "Config section to read (e.g. 'prd_contexts', 'thinking', 'verification')",
         },
       },
       required: [],
@@ -590,18 +288,11 @@ const TOOLS = {
       "Check the health of the MCP server and its dependencies.",
     inputSchema: { type: "object", properties: {}, required: [] },
     handler(_args) {
-      const validatorExists = ENVIRONMENT === "cli" && fs.existsSync(
-        path.join(ENGINE_HOME, "validate-license")
-      );
-      const license = validateLicense();
       const result = {
         status: "ok",
         version: skillConfig.version || "unknown",
         environment: ENVIRONMENT,
         skill_config_loaded: Object.keys(skillConfig).length > 0,
-        external_validator_available: validatorExists,
-        license_tier: license.tier,
-        license_activated: license.source === "activated_key",
         engine_home: ENGINE_HOME,
         plugin_root: PLUGIN_ROOT,
         timestamp: new Date().toISOString(),
@@ -643,14 +334,9 @@ const TOOLS = {
       if (args.context_type && contexts.configurations) {
         const cfg = contexts.configurations[args.context_type];
         if (cfg) {
-          const license = validateLicense();
-          const freeContexts =
-            (skillConfig.license || {}).free_tier?.prd_contexts || ["feature", "bug"];
           return {
             context_type: args.context_type,
             configuration: cfg,
-            requires_license: !freeContexts.includes(args.context_type),
-            current_tier: license.tier,
           };
         }
         return {
@@ -667,37 +353,16 @@ const TOOLS = {
 
   list_available_strategies: {
     description:
-      "List thinking strategies available for the current license tier.",
+      "List all available thinking strategies.",
     inputSchema: { type: "object", properties: {}, required: [] },
     handler(_args) {
-      const license = validateLicense();
       const thinking = skillConfig.thinking || {};
       const all = thinking.available_strategies || [];
       const prioritization = thinking.strategy_prioritization || {};
 
-      if (license.tier === "free") {
-        const freeStrategies =
-          (skillConfig.license || {}).free_tier?.strategies ||
-          (skillConfig.strategy_engine || {}).license_tiers?.free || [
-            "zero_shot",
-            "chain_of_thought",
-          ];
-        return {
-          tier: license.tier,
-          strategies: freeStrategies,
-          total_available: freeStrategies.length,
-          total_strategies: all.length,
-          locked: all.filter((s) => !freeStrategies.includes(s)),
-          prioritization,
-        };
-      }
-
       return {
-        tier: license.tier,
         strategies: all,
         total_available: all.length,
-        total_strategies: all.length,
-        locked: [],
         prioritization,
       };
     },

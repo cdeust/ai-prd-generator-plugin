@@ -13,36 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Context-aware section generation with streaming support
   - JIRA ticket generation with epics, stories, and tasks
 
-- **EncryptionEngine (AIPRDEncryptionEngine)** - Hardware-bound licensing and encrypted distribution
-  - Ed25519 license signing and verification
-  - Hardware fingerprinting (macOS IOKit, iOS vendor ID, Linux machine-id)
-  - AES-256-GCM encrypted XCFramework distribution with HKDF key derivation
-  - SecureFrameworkLoader with license-gated feature access
+- **EncryptionEngine (AIPRDEncryptionEngine)** - PII detection and security
   - PII detection and prompt injection protection
   - TokenVault for secure credential storage
 
-- **Encrypted XCFramework Distribution**
-  - Build automation for all 8 engine packages
-  - AIPRD-ENC-V1 encryption format with magic header validation
-  - Hardware-bound decryption keys (license + machine fingerprint)
-  - Ed25519 keypair generation and license signing scripts
-
-- **Commercial License**
-  - Hardware-bound Ed25519 signed licenses
-  - Free tier (basic strategies, keyword search, basic verification)
-  - Licensed tier (all 15 strategies, hybrid RAG, full verification, all 8 PRD types)
-  - Perpetual and time-limited license options
-
 ### Changed
 - Version bump from 7.0.0-beta to 1.0.0-mvp
-- License changed from Development Beta to Commercial
 - All 8 engine packages now included (was 6 in beta)
 - Total: 1,554 Swift files across 8 engines + core library
 
 ### Technical Details
-- Ed25519 keypair for cryptographic license verification
-- AES-256-GCM with HKDF-SHA256 for framework encryption
-- Hardware fingerprint: SHA256(serial + UUID + model) on macOS
 - Build order respects dependency graph across 8 packages
 
 ## [7.0.0-beta] - 2026-02-04
@@ -94,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Context-Aware RAG** - Retrieval depth adapts to investigation needs
   - 8 RAGFocus types: architectureOverview, implementationDetails, bugLocation, forensicInvestigation, feasibilityValidation, coreComponents, productionReadiness, pipelineAutomation
-  - `LicenseAwareRAGService` with context-based hop configuration
+  - RAG service with context-based hop configuration
 
 - **Context-Aware Sections** - Section templates adapt to PRD type
   - `ContextAwareSectionConfig` with sections, weights, display names, and guidance per context
@@ -104,11 +84,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ThinkingStrategySelector.applyContextBoosts()` for all 8 contexts
   - `StrategyEngineAdapter` with context-enhanced problem descriptions
   - `StrategyRecommendationService` with context-specific guidance
-
-- **License-Gated PRD Types** - Free tier access control
-  - Free tier: Only `feature` and `bug` contexts
-  - Licensed tier: All 8 context types
-  - Free tier caps: 5 questions, 1 RAG hop, 6 sections max
 
 ### Changed
 - **PRDContext enum** - Extended from 4 to 8 types with full configuration properties
@@ -155,7 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Phase 5: AIPRDStrategyEngine** - Research-weighted strategy enforcement
   - Research Evidence Database with 30+ peer-reviewed findings
   - Claim Characteristic Analysis for complexity detection
-  - Tier-based selection (Tier 1-4) based on MIT/Stanford/Harvard/Anthropic/OpenAI/DeepSeek research
+  - Research-based selection (Tier 1-4) based on MIT/Stanford/Harvard/Anthropic/OpenAI/DeepSeek research
   - Strategy Enforcement Engine with mandatory/recommended/suggested levels
   - Compliance Validation for LLM response structure
   - Effectiveness Tracking with feedback loop
@@ -163,7 +138,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.1.0] - 2026-02-02
 
 ### Added
-- **Phase 4: License-Aware Architecture** - Free/Licensed tier system
 - **15 RAG-Enhanced Thinking Strategies** - All strategies support codebaseId
 - **Research-Based Prioritization** - Tier 1-4 based on academic research
 - **IntegratedReasoningEngine** - Cross-enhancement coordination
