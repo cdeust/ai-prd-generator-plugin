@@ -4,5 +4,6 @@
   "author": {
     "name": "Clement Deust",
     "email": "admin@ai-architect.tools"
-  }
+  },
+  "mcpServers": "./.mcp.json"
 }
