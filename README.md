@@ -94,7 +94,7 @@ cd ai-prd-generator-plugin
 
 This plugin handles PRD generation — Stage 4 of a 10-stage autonomous development pipeline.
 
-**[ai-architect-feedback-loop](https://github.com/cdeust/ai-architect-feedback-loop)** is the full pipeline: it takes a product idea through research, architecture, PRD generation, implementation planning, code generation, testing, and deployment — all autonomous, all verified.
+**[ai-architect-feedback-loop](https://github.com/cdeust/ai-architect-feedback-loop)** is the full pipeline: it takes a research finding through impact analysis, PRD generation, implementation, gate enforcement, verification, and deployment — all autonomous, all verified.
 
 If you're using this plugin and thinking "I wish this continued into implementation," that's the other repo.
 
