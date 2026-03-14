@@ -18,7 +18,6 @@ mkdir -p "$STAGE"
 cp -R "$REPO_ROOT/.claude-plugin" "$STAGE/"
 cp -R "$REPO_ROOT/skills" "$STAGE/"
 cp -R "$REPO_ROOT/commands" "$STAGE/"
-cp "$REPO_ROOT/skill-config.json" "$STAGE/"
 
 # Copy MCP server (without node_modules if present)
 mkdir -p "$STAGE/mcp-server"
@@ -28,17 +27,8 @@ cp "$REPO_ROOT/mcp-server/index.js" "$STAGE/mcp-server/"
 # Copy LICENSE if present
 [ -f "$REPO_ROOT/LICENSE" ] && cp "$REPO_ROOT/LICENSE" "$STAGE/" || true
 
-# Generate .mcp.json for Cowork (uses ${CLAUDE_PLUGIN_ROOT}/ resolved by plugin system)
-cat > "$STAGE/.mcp.json" << 'MCPEOF'
-{
-  "mcpServers": {
-    "ai-prd-generator": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js"]
-    }
-  }
-}
-MCPEOF
+# Copy .mcp.json from repo (uses ${CLAUDE_PLUGIN_ROOT} resolved by plugin system)
+cp "$REPO_ROOT/.mcp.json" "$STAGE/"
 
 # Build ZIP — exclude any stray junk
 mkdir -p "$DIST_DIR"
