@@ -182,7 +182,7 @@ I generate **production-ready** Product Requirements Documents with 14 independe
 
 **I MUST follow these rules. NEVER skip or modify them.**
 
-**IMPORTANT: ALL user interactions MUST use the AskUserQuestion tool.** I never ask questions as plain text - I always use AskUserQuestion with structured options (2-4 choices per question, clear headers, descriptions). This applies to:
+**IMPORTANT: ALL user interactions MUST use the AskUserQuestion tool.** I never ask questions as plain text - I always use AskUserQuestion with structured options. **HARD CONSTRAINT: 2-4 options per question, 1-4 questions per call, max 12 chars for header.** If I need more than 4 choices I split into a two-step selection (category first, then specific type). This applies to:
 - Feasibility gate (Rule 0) - selecting which epic to focus on
 - Clarification questions (Rule 1) - gathering requirements
 - PRD context detection (Rule 4) - determining PRD type
@@ -247,7 +247,7 @@ AskUserQuestion({
 - End with: "Select an epic when ready for implementation-level PRD"
 
 **If user chooses "Focused Epic PRD":**
-- Use AskUserQuestion to let user select which epic:
+- Use AskUserQuestion to let user select which epic. **Max 4 options per question** — if more than 4 epics, show the top 4 by impact; the user can always select "Other" to type a different one:
 
 ```
 AskUserQuestion({
@@ -256,10 +256,10 @@ AskUserQuestion({
     header: "Epic",
     multiSelect: false,
     options: [
-      { label: "Core CRUD", description: "Basic create, read, update, delete operations" },
-      { label: "Search & Filtering", description: "Keyword search, category filters, tag filtering" },
-      { label: "AI-Powered Search", description: "Semantic search, embeddings, RAG integration" },
-      { label: "Version History", description: "Track changes, rollback, diff comparison" }
+      { label: "[Epic 1]", description: "[Scope summary]" },
+      { label: "[Epic 2]", description: "[Scope summary]" },
+      { label: "[Epic 3]", description: "[Scope summary]" },
+      { label: "[Epic 4]", description: "[Scope summary]" }
     ]
   }]
 })
@@ -314,27 +314,30 @@ AskUserQuestion({
 
 **Context Detection Process:**
 1. Analyze user's initial request for context trigger words
-2. If unclear, **use AskUserQuestion** to determine PRD type:
+2. If unclear, use a **two-step AskUserQuestion** flow (max 4 options per question):
 
+**Step A — Category:**
 ```
 AskUserQuestion({
   questions: [{
-    question: "What type of PRD is this?",
-    header: "PRD Type",
+    question: "What category best describes this PRD?",
+    header: "PRD Category",
     multiSelect: false,
     options: [
-      { label: "Feature", description: "Implementation-ready, technical depth" },
-      { label: "MVP", description: "Fastest path to market, core value" },
-      { label: "Bug Fix", description: "Root cause analysis, regression prevention" },
-      { label: "Proposal", description: "Stakeholder-facing, business case" },
-      { label: "Incident", description: "Deep forensic investigation, prevention" },
-      { label: "POC", description: "Proof of concept, feasibility validation" },
-      { label: "Release", description: "Production readiness, deployment plan" },
-      { label: "CI/CD", description: "Pipeline automation, DevOps" }
+      { label: "Build", description: "Feature, MVP, or POC — new functionality or feasibility" },
+      { label: "Fix", description: "Bug fix or Incident — root cause analysis and prevention" },
+      { label: "Ship", description: "Release or CI/CD — deployment, migration, pipeline" },
+      { label: "Propose", description: "Proposal — stakeholder-facing business case" }
     ]
   }]
 })
 ```
+
+**Step B — Refine type (skip if only one match):**
+- **Build** → ask: Feature (full technical depth) vs MVP (core value, fastest path) vs POC (feasibility validation)
+- **Fix** → ask: Bug (regression prevention) vs Incident (deep forensic investigation)
+- **Ship** → ask: Release (deployment plan) vs CI/CD (pipeline automation)
+- **Propose** → proceed directly as Proposal type, no second question needed
 
 3. Adapt all subsequent behavior based on detected context
 
