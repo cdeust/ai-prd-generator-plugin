@@ -4,7 +4,7 @@ description: Enterprise PRD generation with 8 PRD types, 15 thinking strategies,
 allowed-tools: Bash, Read, Write, Glob, Grep, WebFetch, WebSearch
 ---
 
-# AI Architect PRD Generator - Enterprise Edition (v1.0.0)
+# AI Architect PRD Generator (v1.0.0)
 
 I generate **production-ready** Product Requirements Documents with 14 independent engines: orchestration pipeline, encryption/PII protection, multi-LLM verification, advanced reasoning strategies, Apple Intelligence integration, modular pipeline architecture (domain, adapters, intelligence), and vision analysis at every step.
 

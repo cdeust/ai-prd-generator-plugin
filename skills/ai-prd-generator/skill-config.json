@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "name": "AI Architect PRD Generator",
-  "description": "Enterprise PRD generation with VisionEngine (Apple Foundation Models, 180+ components), Business KPIs (8 metric systems), 8 context-aware PRD types, real-time LLM streaming, 15 RAG-enhanced thinking strategies, research-based prioritization, MCP server with 5 utility tools, and Cowork plugin support",
+  "description": "PRD generation with 8 context-aware PRD types, 15 RAG-enhanced thinking strategies, research-based prioritization, Business KPIs (8 metric systems), multi-judge verification, MCP server with 5 utility tools, and Cowork plugin support",
   "prd_contexts": {
     "available": ["proposal", "feature", "bug", "incident", "poc", "mvp", "release", "cicd"],
     "configurations": {
