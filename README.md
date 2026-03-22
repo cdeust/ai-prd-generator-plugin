@@ -108,13 +108,27 @@ If you're using this plugin and thinking "I wish this continued into implementat
 
 ## System Requirements
 
-- macOS 14+ (Sonoma) on Apple Silicon (M1/M2/M3/M4)
+### Cowork Plugin (Claude Desktop)
+
+- Claude Desktop (macOS or Windows) with a paid plan (Pro, Max, Team, or Enterprise)
+- No additional dependencies — the plugin runs inside Cowork's sandboxed VM
+
+### CLI Terminal Mode
+
+- macOS, Windows, or Linux
 - Node.js 18+
 - Claude Code (Anthropic)
+
+### Swift Engine Library (optional — for developers extending the engines)
+
+- macOS 14+ (Sonoma) — Apple Silicon or Intel
+- Swift 5.9+
 
 ## Troubleshooting
 
 **Commands not found** — Run `./scripts/setup.sh` again. Check that `~/.claude/skills/ai-prd-generator/` exists.
+
+**Plugin not visible on iPad** — Cowork only runs on Claude Desktop (macOS/Windows). On iPad, use [Claude Dispatch](https://support.claude.com/en/articles/13345190-get-started-with-cowork) to remotely access a Cowork session running on your Mac.
 
 **Clarification loop won't end** — Say "proceed" to skip to generation at any point.
 

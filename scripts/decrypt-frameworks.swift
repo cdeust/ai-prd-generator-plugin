@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 // decrypt-frameworks.swift — Decrypt encrypted XCFrameworks for local building
-// Compiled by setup-frameworks.sh
+// Compiled by setup-frameworks.sh: swiftc -o /tmp/aiprd-decrypt scripts/decrypt-frameworks.swift -framework IOKit
 
 import CryptoKit
 import Foundation
@@ -9,7 +9,7 @@ import Foundation
 import IOKit
 #endif
 
-let magicHeader = Data("AIPRD-ENC-V1".utf8)
+let magicHeader = Data("AIPRD-ENC-V1".utf8) // SAFE: standalone CLI script, not injected dependency
 
 func generateHardwareFingerprint() -> String {
     var components: [String] = []
@@ -47,8 +47,9 @@ func generateHardwareFingerprint() -> String {
     return hash.compactMap { String(format: "%02x", $0) }.joined()
 }
 
-func deriveKey(licenseKey: String, hardwareFingerprint: String) -> SymmetricKey {
-    let inputKeyMaterial = Data((licenseKey + ":" + hardwareFingerprint).utf8)
+func deriveKey(hardwareFingerprint: String) -> SymmetricKey {
+    let seed = "AIPRD-INTEGRITY-2026"
+    let inputKeyMaterial = Data((seed + ":" + hardwareFingerprint).utf8)
     let salt = Data("AIPRD-SALT-2026".utf8)
     let info = Data("framework-encryption".utf8)
     return HKDF<SHA256>.deriveKey(
@@ -78,9 +79,6 @@ func decryptData(_ encryptedData: Data, key: SymmetricKey) throws -> Data {
 
 // MARK: - Main
 
-let licensePath = FileManager.default.homeDirectoryForCurrentUser
-    .appendingPathComponent(".aiprd/license.json")
-
 let encryptedDir: URL
 let outputDir: URL
 
@@ -98,22 +96,9 @@ if let env = ProcessInfo.processInfo.environment["OUTPUT_DIR"] {
         .appendingPathComponent("frameworks")
 }
 
-// Load license
-let licenseData = try Data(contentsOf: licensePath)
-let license = try JSONSerialization.jsonObject(with: licenseData) as! [String: Any]
-let licenseId = license["license_id"] as! String
-let hwFingerprint = license["hardware_fingerprint"] as? String ?? generateHardwareFingerprint()
-
-// Verify hardware
-let currentHW = generateHardwareFingerprint()
-guard hwFingerprint == currentHW else {
-    print("❌ License is bound to different hardware")
-    print("   License HW: \(hwFingerprint.prefix(16))...")
-    print("   Current HW: \(currentHW.prefix(16))...")
-    exit(1)
-}
-
-let key = deriveKey(licenseKey: licenseId, hardwareFingerprint: hwFingerprint)
+// Derive key from static seed + hardware fingerprint (tamper protection, no license required)
+let hwFingerprint = generateHardwareFingerprint()
+let key = deriveKey(hardwareFingerprint: hwFingerprint)
 
 // Source packages output directory
 let packagesDir: URL
