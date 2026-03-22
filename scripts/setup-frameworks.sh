@@ -1,6 +1,5 @@
 #!/bin/bash
 # setup-frameworks.sh — Decrypt encrypted XCFrameworks for building
-# Requires: valid license at ~/.aiprd/license.json
 # Usage: ./scripts/setup-frameworks.sh
 set -euo pipefail
 
@@ -10,23 +9,11 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENCRYPTED_DIR="$REPO_ROOT/frameworks/encrypted"
 OUTPUT_DIR="$REPO_ROOT/frameworks"
 PACKAGES_DIR="$REPO_ROOT/packages"
-LICENSE_PATH="$HOME/.aiprd/license.json"
 
 echo "═══════════════════════════════════════════════════════"
 echo "  AIPRD Framework Setup"
 echo "═══════════════════════════════════════════════════════"
 echo ""
-
-# Check license
-if [ ! -f "$LICENSE_PATH" ]; then
-    echo "❌ License not found at: $LICENSE_PATH"
-    echo ""
-    echo "   A valid license is required to decrypt the engine frameworks."
-    echo "   Purchase a license at https://ai-architect.tools"
-    echo "   Then activate it with the CLI plugin's /activate-license command."
-    echo ""
-    exit 1
-fi
 
 # Check encrypted frameworks
 if [ ! -d "$ENCRYPTED_DIR" ]; then
@@ -34,7 +21,6 @@ if [ ! -d "$ENCRYPTED_DIR" ]; then
     exit 1
 fi
 
-echo "  License: $(python3 -c "import json; print(json.load(open('$LICENSE_PATH'))['license_id'])" 2>/dev/null || echo "found")"
 echo "  Decrypting frameworks..."
 echo ""
 
