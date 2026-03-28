@@ -2,7 +2,10 @@
   "mcpServers": {
     "ai-prd-tools": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/index.js"],
+      "env": {
+        "AIPRD_SKILL_CONFIG": "${CLAUDE_PLUGIN_ROOT}/skills/ai-prd-generator/skill-config.json"
+      }
     }
   }
 }
